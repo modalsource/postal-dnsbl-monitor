@@ -56,14 +56,14 @@ class Config:
         if db_dsn:
             # DSN provided - extract individual components for validation
             db_host = db_dsn.split("@")[-1].split(":")[0] if "@" in db_dsn else ""
-            db_port = 5432
+            db_port = 3306
             db_name = ""
             db_user = ""
             db_password = ""
         else:
             # Individual parameters required
             db_host = cls._get_required_env("DB_HOST")
-            db_port = int(os.getenv("DB_PORT", "5432"))
+            db_port = int(os.getenv("DB_PORT", "3306"))
             db_name = cls._get_required_env("DB_NAME")
             db_user = cls._get_required_env("DB_USER")
             db_password = cls._get_required_env("DB_PASSWORD")
@@ -164,15 +164,15 @@ class Config:
         return value
 
     def get_db_connection_string(self) -> str:
-        """Build PostgreSQL connection string.
+        """Build MySQL connection string.
 
         Returns:
-            str: PostgreSQL DSN connection string.
+            str: MySQL DSN connection string.
         """
         if self.db_dsn:
             return self.db_dsn
 
         return (
-            f"postgresql://{self.db_user}:{self.db_password}"
+            f"mysql://{self.db_user}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )

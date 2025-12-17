@@ -26,7 +26,7 @@ This guide provides step-by-step instructions for local development, testing, bu
 
 - **Python 3.14+**: The application requires Python 3.14 or later
 - **uv**: Modern Python package manager ([installation guide](https://github.com/astral-sh/uv))
-- **PostgreSQL 13+**: Database with existing `postal.ip_addresses` table
+- **MySQL 13+**: Database with existing `postal.ip_addresses` table
 - **Jira Cloud/Server**: Configured project with API access
 - **Docker**: For containerized builds (optional for local dev)
 - **Kubernetes**: For production deployment (kubectl configured)
@@ -40,7 +40,7 @@ This guide provides step-by-step instructions for local development, testing, bu
 
 ### Access Requirements
 
-- PostgreSQL credentials with `SELECT` and `UPDATE` permissions on `postal.ip_addresses`
+- MySQL credentials with `SELECT` and `UPDATE` permissions on `postal.ip_addresses`
 - Jira API token with permissions to create/update issues in target project
 - Network access to all configured DNSBL zones (e.g., `zen.spamhaus.org`)
 
@@ -86,7 +86,7 @@ uv pip install -e ".[dev]"
 **Expected dependencies** (from `pyproject.toml`):
 - `dnspython>=2.4.0` - DNS queries
 - `jira>=3.5.0` - Jira API client
-- `psycopg2-binary>=2.9.0` - PostgreSQL adapter
+- `mysql-connector-python>=8.0.0` - MySQL adapter
 - `python-json-logger>=2.0.0` - Structured logging
 - `pytest>=7.4.0` - Testing framework (dev)
 - `testcontainers>=3.7.0` - Integration tests (dev)
@@ -97,11 +97,11 @@ Create `.env` file in project root:
 
 ```bash
 # Database Configuration
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=postal
-POSTGRES_USER=postal_user
-POSTGRES_PASSWORD=secure_password_here
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=postal
+DB_USER=postal_user
+DB_PASSWORD=secure_password_here
 
 # DNSBL Configuration
 DNSBL_ZONES=zen.spamhaus.org,bl.spamcop.net,b.barracudacentral.org
@@ -135,7 +135,7 @@ JOB_RUN_ID_PREFIX=postal-dnsbl-
 
 **See**: `specs/001-postal-dnsbl-monitor/contracts/config-schema.yaml` for full schema and validation rules.
 
-### 5. Prepare PostgreSQL Database
+### 5. Prepare MySQL Database
 
 Ensure the `postal.ip_addresses` table exists with required schema:
 
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS postal.ip_addresses (
 export $(grep -v '^#' .env | xargs)
 
 # Verify critical variables
-echo $POSTGRES_HOST
+echo $DB_HOST
 echo $JIRA_URL
 echo $DNSBL_ZONES
 ```
@@ -204,7 +204,7 @@ python main.py
 ```
 
 **Validation**:
-- Check PostgreSQL: `SELECT ip, priority, blocking_lists FROM postal.ip_addresses WHERE priority > 0;`
+- Check MySQL: `SELECT ip, priority, blocking_lists FROM postal.ip_addresses WHERE priority > 0;`
 - Check Jira: Search for issues in configured project with `DNSBL` label
 
 ---
@@ -238,7 +238,7 @@ pytest tests/integration/test_database_integration.py -v
 ```
 
 **Integration test coverage**:
-- PostgreSQL transactions with READ COMMITTED isolation
+- MySQL transactions with READ COMMITTED isolation
 - Concurrent update scenarios ("last committed wins")
 - DNS queries against real DNSBL zones (using test IPs)
 - Jira API roundtrip (create, search, update, close)
@@ -261,7 +261,7 @@ pytest tests/contract/test_log_contract.py -v     # log-format.json
 ### End-to-End Test
 
 ```bash
-# Full workflow test (requires PostgreSQL + Jira access)
+# Full workflow test (requires MySQL + Jira access)
 pytest tests/e2e/test_full_workflow.py -v --log-cli-level=INFO
 ```
 
@@ -372,11 +372,11 @@ metadata:
   namespace: postal
 type: Opaque
 stringData:
-  POSTGRES_HOST: "postgresql.postal.svc.cluster.local"
-  POSTGRES_PORT: "5432"
-  POSTGRES_DB: "postal"
-  POSTGRES_USER: "postal_user"
-  POSTGRES_PASSWORD: "secure_password_here"
+  DB_HOST: "mysql.postal.svc.cluster.local"
+  DB_PORT: "3306"
+  DB_NAME: "postal"
+  DB_USER: "postal_user"
+  DB_PASSWORD: "secure_password_here"
   JIRA_USERNAME: "api-user@example.com"
   JIRA_API_TOKEN: "your_jira_api_token_here"
 EOF
@@ -488,9 +488,9 @@ kubectl get jobs -n postal -l app=postal-dnsbl-monitor
 
 **Solutions**:
 1. Verify Secret credentials: `kubectl get secret postal-dnsbl-secrets -n postal -o yaml`
-2. Test connectivity from pod: `kubectl run -it --rm psql --image=postgres:13 --restart=Never -- psql -h postgresql.postal.svc.cluster.local -U postal_user -d postal`
-3. Check PostgreSQL NetworkPolicy allows ingress from `postal` namespace
-4. Verify READ COMMITTED isolation level: `SHOW default_transaction_isolation;` (should be `read committed`)
+2. Test connectivity from pod: `kubectl run -it --rm mysql-test --image=mysql:8.0 --restart=Never -- mysql -h mysql.postal.svc.cluster.local -u postal_user -p -D postal`
+3. Check MySQL NetworkPolicy allows ingress from `postal` namespace
+4. Verify READ COMMITTED isolation level: `SELECT @@transaction_isolation;` (should be `READ-COMMITTED`)
 
 ### Issue: Container OOMKilled
 

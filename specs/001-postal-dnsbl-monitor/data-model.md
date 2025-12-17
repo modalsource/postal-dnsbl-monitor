@@ -9,7 +9,7 @@
 
 ### 1. IP Address Record
 
-**Source**: PostgreSQL `postal.ip_addresses` table (existing schema, read/write)
+**Source**: MySQL `postal.ip_addresses` table (existing schema, read/write)
 
 **Attributes**:
 
@@ -274,7 +274,7 @@ Update DB + Create/Update Jira Issue
 **Validation Requirements**:
 
 - `DNSBL_ZONES`: Non-empty, valid domain names
-- `DB_HOST`: Reachable PostgreSQL server
+- `DB_HOST`: Reachable MySQL server
 - `JIRA_SERVER`: Valid HTTPS URL
 - `LISTED_PRIORITY < CLEAN_FALLBACK_PRIORITY`: Sanity check
 

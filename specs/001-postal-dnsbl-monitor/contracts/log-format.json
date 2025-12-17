@@ -241,7 +241,7 @@
         "error_message": {
           "type": "string",
           "description": "Detailed error message with troubleshooting context",
-          "example": "Failed to connect to PostgreSQL at postgresql.postal.svc.cluster.local:5432 - connection refused"
+          "example": "Failed to connect to PostgreSQL at mysql.postal.svc.cluster.local:3306 - connection refused"
         },
         "exit_code": {
           "type": "integer",
@@ -339,7 +339,7 @@
         "timestamp": "2025-12-17T10:30:10.123Z",
         "job_run_id": "550e8400-e29b-41d4-a716-446655440000",
         "error_type": "DatabaseUnreachable",
-        "error_message": "Failed to connect to PostgreSQL at postgresql.postal.svc.cluster.local:5432 - connection refused",
+        "error_message": "Failed to connect to PostgreSQL at mysql.postal.svc.cluster.local:3306 - connection refused",
         "exit_code": 1,
         "level": "ERROR"
       }

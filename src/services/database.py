@@ -1,12 +1,12 @@
-"""PostgreSQL database service for IP address management."""
+"""MySQL database service for IP address management."""
 
 import logging
 from contextlib import contextmanager
 from typing import Generator, Optional
+from urllib.parse import urlparse
 
-import psycopg2
-import psycopg2.extras
-from psycopg2.extensions import ISOLATION_LEVEL_READ_COMMITTED
+import mysql.connector
+from mysql.connector import Error as MySQLError
 
 from src.models.ip_record import IPRecord
 
@@ -17,20 +17,29 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def get_db_connection(
     dsn: str,
-) -> Generator[psycopg2.extensions.connection, None, None]:
-    """Context manager for PostgreSQL connection with READ COMMITTED isolation.
+) -> Generator[mysql.connector.connection.MySQLConnection, None, None]:
+    """Context manager for MySQL connection with READ COMMITTED isolation.
 
     Args:
-        dsn: PostgreSQL connection string.
+        dsn: MySQL connection string (mysql://user:password@host:port/database).
 
     Yields:
-        psycopg2.extensions.connection: Database connection.
+        mysql.connector.connection.MySQLConnection: Database connection.
 
     Raises:
-        psycopg2.Error: On connection or transaction failures.
+        mysql.connector.Error: On connection or transaction failures.
     """
-    conn = psycopg2.connect(dsn)
-    conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+    # Parse DSN to extract connection parameters
+    parsed = urlparse(dsn)
+    conn = mysql.connector.connect(
+        host=parsed.hostname,
+        port=parsed.port or 3306,
+        user=parsed.username,
+        password=parsed.password,
+        database=parsed.path.lstrip("/"),
+        autocommit=False,
+        isolation_level="READ-COMMITTED",
+    )
     try:
         yield conn
         conn.commit()  # Commit on successful context exit
@@ -42,13 +51,13 @@ def get_db_connection(
 
 
 class DatabaseService:
-    """Service for PostgreSQL operations on postal.ip_addresses table."""
+    """Service for MySQL operations on postal.ip_addresses table."""
 
     def __init__(self, dsn: str):
         """Initialize database service.
 
         Args:
-            dsn: PostgreSQL connection string.
+            dsn: MySQL connection string.
         """
         self.dsn = dsn
 
@@ -59,10 +68,10 @@ class DatabaseService:
             list[IPRecord]: List of IP records.
 
         Raises:
-            psycopg2.Error: On database errors.
+            mysql.connector.Error: On database errors.
         """
         with get_db_connection(self.dsn) as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            with conn.cursor(dictionary=True) as cur:
                 cur.execute(
                     """
                     SELECT id, ip, priority, "oldPriority" as old_priority,
@@ -102,7 +111,7 @@ class DatabaseService:
             bool: True if update occurred, False if no-op (already in this state).
 
         Raises:
-            psycopg2.Error: On database errors.
+            mysql.connector.Error: On database errors.
         """
         sorted_zones = ",".join(sorted(zones))
         last_event = f"new block from list(s) {sorted_zones}"
@@ -150,7 +159,7 @@ class DatabaseService:
             bool: True if update occurred, False if no-op.
 
         Raises:
-            psycopg2.Error: On database errors.
+            mysql.connector.Error: On database errors.
         """
         restore_priority = old_priority if old_priority is not None else clean_fallback
 
@@ -183,7 +192,7 @@ class DatabaseService:
             bool: True if update occurred, False if no-op.
 
         Raises:
-            psycopg2.Error: On database errors.
+            mysql.connector.Error: On database errors.
         """
         sorted_zones = ",".join(sorted(zones))
         last_event = f"blocking list change: {sorted_zones}"

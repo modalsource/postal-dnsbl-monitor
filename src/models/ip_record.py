@@ -1,4 +1,4 @@
-"""IP Address Record model from PostgreSQL."""
+"""IP Address Record model from MySQL."""
 
 from dataclasses import dataclass
 

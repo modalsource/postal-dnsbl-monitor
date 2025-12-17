@@ -29,7 +29,7 @@ Single-project CLI batch job structure (per plan.md):
 
 - [X] T001 Create project directory structure with src/, tests/, kubernetes/ directories
 - [X] T002 Initialize Python 3.14 project with pyproject.toml per research.md section 6
-- [X] T003 [P] Configure uv dependency management with uv.lock for dnspython, jira, psycopg2-binary, python-json-logger
+- [X] T003 [P] Configure uv dependency management with uv.lock for dnspython, jira, mysql-connector-python-binary, python-json-logger
 - [X] T004 [P] Create .gitignore with Python, IDE, and Kubernetes-specific exclusions
 - [X] T005 [P] Create .dockerignore for multi-stage Docker build optimization
 - [X] T006 [P] Create README.md with project overview and quickstart reference link
@@ -61,13 +61,13 @@ Single-project CLI batch job structure (per plan.md):
 ### Services Foundation
 
 - [X] T017 Create src/services/__init__.py as services package marker
-- [X] T018 Create src/services/database.py with PostgreSQL connection, context manager, READ COMMITTED isolation per research.md section 3
+- [X] T018 Create src/services/database.py with MySQL connection, context manager, READ COMMITTED isolation per research.md section 3
 - [X] T019 Create src/services/dns_checker.py with dnspython + ThreadPoolExecutor for concurrent DNSBL queries per research.md section 1
 - [X] T020 Create src/services/jira_client.py with JQL search, issue create/update, exponential backoff per research.md section 2
 
 ### Testing Infrastructure
 
-- [X] T021 Create tests/conftest.py with pytest fixtures for PostgreSQL (testcontainers), Jira mocking, DNS mocking per research.md section 7
+- [X] T021 Create tests/conftest.py with pytest fixtures for MySQL (testcontainers), Jira mocking, DNS mocking per research.md section 7
 - [X] T022 [P] Create tests/unit/__init__.py as unit test package marker
 - [X] T023 [P] Create tests/integration/__init__.py as integration test package marker
 - [X] T024 [P] Create tests/contract/__init__.py as contract test package marker

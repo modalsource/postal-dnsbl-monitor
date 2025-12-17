@@ -4,7 +4,7 @@
 **Created**: 2025-12-17  
 **Status**: Draft  
 **Constitution Version**: 1.2.0  
-**Input**: User description: "Define the full technical specification for the Postal DNSBL Monitor system in strict compliance with the current constitution (version 1.2.0). The specification must describe a stateless, containerized Python 3.14 application designed to run as a Kubernetes CronJob. The system periodically checks IPv4 addresses stored in the PostgreSQL table postal.ip_addresses against a configurable set of DNSBL providers using dnspython, classifying results as LISTED, NOT_LISTED, or UNKNOWN according to DNS semantics."
+**Input**: User description: "Define the full technical specification for the Postal DNSBL Monitor system in strict compliance with the current constitution (version 1.2.0). The specification must describe a stateless, containerized Python 3.14 application designed to run as a Kubernetes CronJob. The system periodically checks IPv4 addresses stored in the MySQL table postal.ip_addresses against a configurable set of DNSBL providers using dnspython, classifying results as LISTED, NOT_LISTED, or UNKNOWN according to DNS semantics."
 
 ## Clarifications
 
@@ -12,7 +12,7 @@
 
 - Q: What are the specific retry parameters for Jira API transient failures? → A: 3 retries with exponential backoff (2s, 4s, 8s intervals)
 - Q: Which alerting mechanism should be used for widespread DNS failures? → A: Create Jira issue with DNS failure issue type when >50% of zones fail (labeled "MAJOR MALFUNCTION" with detailed explanation and logs)
-- Q: What specific PostgreSQL transaction isolation level should be used? → A: READ COMMITTED (PostgreSQL default)
+- Q: What specific MySQL transaction isolation level should be used? → A: READ COMMITTED (MySQL default)
 - Q: What are the recommended Kubernetes resource requests and limits? → A: Requests: 250m CPU / 256Mi memory, Limits: 500m CPU / 512Mi memory
 - Q: Should the entire JQL query template be configurable or just specific parts? → A: Configurable project and status, fixed summary pattern
 
@@ -106,7 +106,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 #### Database Access and IP Discovery
 
-- **FR-005**: System MUST connect to the PostgreSQL database using connection parameters from environment variables (DSN or individual host/port/user/password/database parameters).
+- **FR-005**: System MUST connect to the MySQL database using connection parameters from environment variables (DSN or individual host/port/user/password/database parameters).
 
 - **FR-006**: System MUST query all IPv4 addresses from the `postal.ip_addresses` table at job start, retrieving columns: `id`, `ip`, `priority`, `oldPriority`, `blockingLists`, `lastEvent`.
 
@@ -207,7 +207,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 - **FR-032**: System MUST be safe to run repeatedly with identical inputs, producing identical outputs and zero additional Jira issues or database writes on subsequent runs with no state changes.
 
-- **FR-033**: System MUST handle overlapping or concurrent job executions safely using READ COMMITTED transaction isolation level (PostgreSQL default), ensuring no lost updates or partial states through proper transaction boundaries.
+- **FR-033**: System MUST handle overlapping or concurrent job executions safely using READ COMMITTED transaction isolation level (MySQL default), ensuring no lost updates or partial states through proper transaction boundaries.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -255,7 +255,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 ### Dependencies
 
-- **PostgreSQL Database**: System requires access to a PostgreSQL instance containing the `postal.ip_addresses` table with columns: `id`, `ip`, `priority`, `oldPriority`, `blockingLists`, `lastEvent`. Table schema is assumed to exist; system does not create or migrate tables.
+- **MySQL Database**: System requires access to a MySQL instance containing the `postal.ip_addresses` table with columns: `id`, `ip`, `priority`, `oldPriority`, `blockingLists`, `lastEvent`. Table schema is assumed to exist; system does not create or migrate tables.
 
 - **Jira Instance**: System requires a Jira instance with API access, a configured project, and permissions to create/search/comment on issues.
 
@@ -277,7 +277,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 - **Job Schedule**: CronJob schedule is configured to allow sufficient time for job completion before the next run starts (e.g., run every 15 minutes with 5-minute max job duration, leaving 10-minute buffer to prevent overlapping executions).
 
-- **Database Transaction Isolation**: PostgreSQL is configured with READ COMMITTED isolation level (default). This prevents dirty reads while allowing concurrent job executions to update different IPs independently, with "last committed wins" semantics for any overlapping updates to the same IP.
+- **Database Transaction Isolation**: MySQL is configured with READ COMMITTED isolation level (default). This prevents dirty reads while allowing concurrent job executions to update different IPs independently, with "last committed wins" semantics for any overlapping updates to the same IP.
 
 - **No Schema Changes**: System does not create, alter, or drop database tables. All required schema is assumed to exist and be compatible.
 

@@ -7,7 +7,7 @@
 
 ## Summary
 
-The Postal DNSBL Monitor is a stateless, containerized Python 3.14 application that runs as a Kubernetes CronJob to periodically check IPv4 addresses stored in the PostgreSQL `postal.ip_addresses` table against configurable DNSBL providers. The system uses dnspython for DNS lookups, classifying results as LISTED, NOT_LISTED, or UNKNOWN. It automatically throttles blacklisted IPs by updating database priority columns with deterministic idempotent updates, creates and manages Jira tracking tickets using JQL-based deduplication, and emits structured JSON logs for operational monitoring. The implementation prioritizes DNS fault tolerance (>50% UNKNOWN triggers MAJOR MALFUNCTION alerts), Jira retry with exponential backoff (2s, 4s, 8s), and READ COMMITTED transaction isolation for concurrent job safety.
+The Postal DNSBL Monitor is a stateless, containerized Python 3.14 application that runs as a Kubernetes CronJob to periodically check IPv4 addresses stored in the MySQL `postal.ip_addresses` table against configurable DNSBL providers. The system uses dnspython for DNS lookups, classifying results as LISTED, NOT_LISTED, or UNKNOWN. It automatically throttles blacklisted IPs by updating database priority columns with deterministic idempotent updates, creates and manages Jira tracking tickets using JQL-based deduplication, and emits structured JSON logs for operational monitoring. The implementation prioritizes DNS fault tolerance (>50% UNKNOWN triggers MAJOR MALFUNCTION alerts), Jira retry with exponential backoff (2s, 4s, 8s), and READ COMMITTED transaction isolation for concurrent job safety.
 
 ## Technical Context
 
@@ -15,10 +15,10 @@ The Postal DNSBL Monitor is a stateless, containerized Python 3.14 application t
 **Primary Dependencies**: 
 - `dnspython` (DNS lookups with DNSBL zones)
 - `jira` from pycontribs (Jira API client)
-- `psycopg2` or `psycopg2-binary` (PostgreSQL driver)
+- `mysql-connector-python` or `mysql-connector-python-binary` (MySQL driver)
 
 **Dependency Management**: `uv` (REQUIRED per constitution v1.2.0)  
-**Storage**: PostgreSQL (existing `postal.ip_addresses` table, READ COMMITTED isolation)  
+**Storage**: MySQL (existing `postal.ip_addresses` table, READ COMMITTED isolation)  
 **Testing**: `pytest` with fixtures for database/Jira/DNS mocking  
 **Target Platform**: Kubernetes CronJob (containerized Docker image)  
 **Project Type**: Single-project CLI batch job (stateless one-shot execution)  
@@ -45,7 +45,7 @@ The Postal DNSBL Monitor is a stateless, containerized Python 3.14 application t
 
 ### Principle I: Stateless Execution (NON-NEGOTIABLE)
 - ✅ **PASS**: FR-001 requires stateless one-shot process with no local persistent storage
-- ✅ **PASS**: All durable state in PostgreSQL (`postal.ip_addresses`) and Jira (tickets)
+- ✅ **PASS**: All durable state in MySQL (`postal.ip_addresses`) and Jira (tickets)
 - ✅ **PASS**: No assumptions about process continuity or local files
 
 ### Principle II: Kubernetes-Native Deployment
@@ -126,7 +126,7 @@ src/
 │   └── state_transition.py   # State transition logic (clean↔listed)
 ├── services/
 │   ├── __init__.py
-│   ├── database.py           # PostgreSQL connection, IP queries, updates
+│   ├── database.py           # MySQL connection, IP queries, updates
 │   ├── dns_checker.py        # DNSBL zone queries, concurrent lookups
 │   ├── jira_client.py        # Jira API, JQL search, issue create/update
 │   └── logger.py             # Structured JSON logging utility
@@ -145,7 +145,7 @@ tests/
 │   ├── test_dns_result.py
 │   └── test_ip_utils.py
 ├── integration/
-│   ├── test_database.py      # PostgreSQL integration (testcontainers)
+│   ├── test_database.py      # MySQL integration (testcontainers)
 │   ├── test_dns_checker.py  # Real DNS queries (integration-only)
 │   └── test_jira_client.py  # Jira API integration (mock server)
 └── contract/
@@ -197,10 +197,10 @@ README.md                     # Project overview, quickstart reference
      - Rate limit detection and handling
      - Issue create/update/comment API patterns
 
-3. **PostgreSQL Transaction Management**
+3. **MySQL Transaction Management**
    - **Question**: How to ensure READ COMMITTED isolation with proper transaction boundaries for idempotent updates?
    - **Research Areas**:
-     - psycopg2 connection pooling for CronJob context
+     - mysql-connector-python connection pooling for CronJob context
      - Transaction management patterns (context managers)
      - Preventing lost updates during concurrent job executions
      - Batch update strategies for 1000 IPs
@@ -233,7 +233,7 @@ README.md                     # Project overview, quickstart reference
 7. **Testing Strategy for Stateless CronJob**
    - **Question**: How to test idempotency, deduplication, and invariants in integration tests?
    - **Research Areas**:
-     - pytest fixtures for PostgreSQL (testcontainers)
+     - pytest fixtures for MySQL (testcontainers)
      - Jira API mocking strategies (responses library or mock server)
      - DNS mocking for deterministic DNSBL tests
      - Contract test design for constitutional compliance
@@ -251,7 +251,7 @@ README.md                     # Project overview, quickstart reference
 **Entities** (from spec Key Entities section):
 
 1. **IP Address Record**
-   - Source: PostgreSQL `postal.ip_addresses` table
+   - Source: MySQL `postal.ip_addresses` table
    - Fields: `id` (int), `ip` (IPv4 string), `priority` (int), `oldPriority` (nullable int), `blockingLists` (string), `lastEvent` (string)
    - Validation Rules:
      - `ip` must be valid IPv4 dotted-quad (e.g., 203.0.113.45)
@@ -294,11 +294,11 @@ environment_variables:
   DB_HOST:
     type: string
     required: true
-    description: PostgreSQL server hostname
+    description: MySQL server hostname
   DB_PORT:
     type: integer
-    default: 5432
-    description: PostgreSQL server port
+    default: 3306
+    description: MySQL server port
   DB_NAME:
     type: string
     required: true
@@ -433,7 +433,7 @@ Structured log schema (per-IP log entry):
 ### 3. Quickstart Guide (`quickstart.md`)
 
 **Contents**:
-1. Prerequisites (Python 3.14, uv, PostgreSQL, Kubernetes cluster, Jira instance)
+1. Prerequisites (Python 3.14, uv, MySQL, Kubernetes cluster, Jira instance)
 2. Local Development Setup
    - Clone repository
    - Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
@@ -443,7 +443,7 @@ Structured log schema (per-IP log entry):
    - Run locally: `uv run python src/main.py`
 3. Testing
    - Run unit tests: `uv run pytest tests/unit`
-   - Run integration tests: `uv run pytest tests/integration` (requires PostgreSQL testcontainer)
+   - Run integration tests: `uv run pytest tests/integration` (requires MySQL testcontainer)
    - Run contract tests: `uv run pytest tests/contract`
 4. Docker Build
    - Build image: `docker build -t postal-dnsbl-monitor:latest .`
@@ -465,7 +465,7 @@ Run `.specify/scripts/bash/update-agent-context.sh opencode` to update agent con
 - uv dependency management
 - dnspython
 - jira (pycontribs)
-- psycopg2
+- mysql-connector-python
 - pytest
 - Kubernetes CronJob patterns
 

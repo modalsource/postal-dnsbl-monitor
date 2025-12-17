@@ -13,13 +13,13 @@ environment_variables:
     type: string
     required: true
     description: "PostgreSQL server hostname or IP address"
-    example: "postgresql.postal.svc.cluster.local"
+    example: "mysql.postal.svc.cluster.local"
     validation: "Non-empty string, resolvable hostname or IP"
   
   DB_PORT:
     type: integer
     required: false
-    default: 5432
+    default: 3306
     description: "PostgreSQL server port"
     validation: "1-65535 range"
   
@@ -48,7 +48,7 @@ environment_variables:
     type: string
     required: false
     description: "Optional PostgreSQL DSN (overrides individual DB_* parameters if provided)"
-    example: "postgresql://user:pass@host:5432/postal"
+    example: "postgresql://user:pass@host:3306/postal"
     validation: "Valid PostgreSQL connection string format"
     note: "If DB_DSN is provided, individual DB_HOST/PORT/NAME/USER/PASSWORD are ignored"
   
@@ -181,8 +181,8 @@ configmap_template: |
     namespace: postal
   data:
     # Database (non-sensitive)
-    DB_HOST: "postgresql.postal.svc.cluster.local"
-    DB_PORT: "5432"
+    DB_HOST: "mysql.postal.svc.cluster.local"
+    DB_PORT: "3306"
     DB_NAME: "postal"
     DB_USER: "dnsbl_monitor"
     
@@ -265,7 +265,7 @@ examples:
     command: "uv run python src/main.py"
     env_file: |
       DB_HOST=localhost
-      DB_PORT=5432
+      DB_PORT=3306
       DB_NAME=postal_dev
       DB_USER=postgres
       DB_PASSWORD=dev_password

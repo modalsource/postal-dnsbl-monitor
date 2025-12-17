@@ -220,15 +220,15 @@ class JiraClient:
 
 ---
 
-## 3. PostgreSQL Transactions: psycopg2 with READ COMMITTED
+## 3. MySQL Transactions: mysql-connector-python with READ COMMITTED
 
 ### Decision
 
-Use **psycopg2** with READ COMMITTED isolation (PostgreSQL default), context managers for transaction boundaries, and batch UPDATE statements for idempotent updates.
+Use **mysql-connector-python** with READ COMMITTED isolation (MySQL default), context managers for transaction boundaries, and batch UPDATE statements for idempotent updates.
 
 ### Rationale
 
-- **Constitutional Mandate**: psycopg2 specified in constitution v1.2.0
+- **Constitutional Mandate**: mysql-connector-python specified in constitution v1.2.0
 - **Isolation Level**: READ COMMITTED sufficient for "last committed wins" semantics per clarification
 - **Idempotency**: Conditional UPDATE with WHERE clause ensures no-op when state unchanged
 - **Simplicity**: No connection pooling needed for CronJob (single execution, then exit)
@@ -236,19 +236,27 @@ Use **psycopg2** with READ COMMITTED isolation (PostgreSQL default), context man
 ### Code Example
 
 ```python
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_READ_COMMITTED
+import mysql.connector
 from contextlib import contextmanager
 from typing import List, Dict, Optional
+from urllib.parse import urlparse
 
 @contextmanager
 def get_db_connection(dsn: str):
     """
-    Context manager for PostgreSQL connection with READ COMMITTED isolation.
+    Context manager for MySQL connection with READ COMMITTED isolation.
     Ensures connection is properly closed even on errors.
     """
-    conn = psycopg2.connect(dsn)
-    conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+    parsed = urlparse(dsn)
+    conn = mysql.connector.connect(
+        host=parsed.hostname,
+        port=parsed.port or 3306,
+        user=parsed.username,
+        password=parsed.password,
+        database=parsed.path.lstrip('/'),
+        autocommit=False,
+        isolation_level='READ-COMMITTED'
+    )
     try:
         yield conn
         conn.commit()  # Commit on successful context exit
@@ -529,7 +537,7 @@ metadata:
 data:
   # Database (non-sensitive)
   DB_HOST: "postgresql.postal.svc.cluster.local"
-  DB_PORT: "5432"
+  DB_PORT: "3306"
   DB_NAME: "postal"
   DB_USER: "dnsbl_monitor"
   
@@ -646,7 +654,7 @@ requires-python = ">=3.14"
 dependencies = [
     "dnspython>=2.4.0",
     "jira>=3.5.0",
-    "psycopg2-binary>=2.9.0",
+    "mysql-connector-python-binary>=2.9.0",
     "python-json-logger>=2.0.0"
 ]
 
@@ -675,11 +683,11 @@ build-backend = "hatchling.build"
 
 ### Decision
 
-Use **pytest** with fixtures for PostgreSQL (via testcontainers), Jira API mocking (via responses), and DNS mocking (via unittest.mock), with dedicated contract tests for constitutional compliance.
+Use **pytest** with fixtures for MySQL (via testcontainers), Jira API mocking (via responses), and DNS mocking (via unittest.mock), with dedicated contract tests for constitutional compliance.
 
 ### Rationale
 
-- **Testcontainers**: Real PostgreSQL in Docker ensures transaction semantics match production
+- **Testcontainers**: Real MySQL in Docker ensures transaction semantics match production
 - **Responses Library**: HTTP mocking for Jira API without external dependencies
 - **Contract Tests**: Verify FR-014, FR-032, FR-020 invariants explicitly
 - **Fast Unit Tests**: Mock all I/O for speed, use integration tests selectively
@@ -690,20 +698,20 @@ Use **pytest** with fixtures for PostgreSQL (via testcontainers), Jira API mocki
 
 ```python
 import pytest
-import psycopg2
+import mysql-connector-python
 from testcontainers.postgres import PostgresContainer
 from unittest.mock import Mock
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    """Start PostgreSQL container for integration tests."""
+    """Start MySQL container for integration tests."""
     with PostgresContainer("postgres:15") as postgres:
         yield postgres
 
 @pytest.fixture
 def db_connection(postgres_container):
     """Provide database connection with postal.ip_addresses table."""
-    conn = psycopg2.connect(postgres_container.get_connection_url())
+    conn = mysql-connector-python.connect(postgres_container.get_connection_url())
     
     # Create schema
     with conn.cursor() as cur:
@@ -836,7 +844,7 @@ def test_idempotent_updates(db_connection):
 |------|----------|-------------|
 | **DNS** | dnspython + ThreadPoolExecutor | Constitutional compliance, 10k queries < 5min |
 | **Jira** | jira-python + custom exponential backoff | Precise 2s/4s/8s retry, JQL flexibility |
-| **Database** | psycopg2 + READ COMMITTED + context managers | Idempotent updates, "last committed wins" |
+| **Database** | mysql-connector-python + READ COMMITTED + context managers | Idempotent updates, "last committed wins" |
 | **Logging** | python-json-logger | Kubernetes-native JSON, minimal overhead |
 | **Deployment** | CronJob + ConfigMap/Secret | GitOps-friendly, resource limits enforced |
 | **Docker** | Multi-stage + uv sync --frozen | Small image (~200MB), reproducible builds |

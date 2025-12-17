@@ -5,7 +5,7 @@ A stateless, containerized Python 3.14 application that runs as a Kubernetes Cro
 ## Features
 
 - **Automatic DNSBL Monitoring**: Checks IP addresses against configurable DNSBL zones
-- **Smart Throttling**: Automatically updates PostgreSQL database to throttle listed IPs
+- **Smart Throttling**: Automatically updates MySQL database to throttle listed IPs
 - **Jira Integration**: Creates and updates tickets with JQL-based deduplication
 - **Fault Tolerant**: Handles DNS failures gracefully, alerts on systemic issues
 - **Idempotent**: Safe to re-run without creating duplicates
@@ -35,7 +35,7 @@ specs/                # Feature specifications and documentation
 ## Requirements
 
 - Python 3.14+
-- PostgreSQL 13+ with Postal mail server database
+- MySQL 5.7+ (or MariaDB 10.2+) with Postal mail server database
 - Jira Cloud/Server instance
 - Kubernetes cluster (for production deployment)
 

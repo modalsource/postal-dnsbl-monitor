@@ -5,8 +5,8 @@ metadata:
   namespace: postal
 data:
   # Database (non-sensitive)
-  DB_HOST: "postgresql.postal.svc.cluster.local"
-  DB_PORT: "5432"
+  DB_HOST: "mysql.postal.svc.cluster.local"
+  DB_PORT: "3306"
   DB_NAME: "postal"
   DB_USER: "dnsbl_monitor"
   

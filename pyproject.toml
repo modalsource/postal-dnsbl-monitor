@@ -7,7 +7,7 @@ requires-python = ">=3.14"
 dependencies = [
     "dnspython>=2.4.0",
     "jira>=3.5.0",
-    "psycopg2-binary>=2.9.0",
+    "mysql-connector-python>=8.0.0",
     "python-json-logger>=2.0.0",
 ]
 
