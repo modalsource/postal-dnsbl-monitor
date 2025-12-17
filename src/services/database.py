@@ -74,9 +74,10 @@ class DatabaseService:
             with conn.cursor(dictionary=True) as cur:
                 cur.execute(
                     """
-                    SELECT id, ip, priority, "oldPriority" as old_priority,
-                           "blockingLists" as blocking_lists, "lastEvent" as last_event
+                    SELECT id, ipv4 as ip, priority, oldPriority as old_priority,
+                           blockingLists as blocking_lists, lastEvent as last_event
                     FROM postal.ip_addresses
+                    WHERE ipv4 IS NOT NULL
                     ORDER BY id
                 """
                 )
@@ -85,7 +86,7 @@ class DatabaseService:
                     IPRecord(
                         id=row["id"],
                         ip=row["ip"],
-                        priority=row["priority"],
+                        priority=row["priority"] or 100,
                         old_priority=row["old_priority"],
                         blocking_lists=row["blocking_lists"] or "",
                         last_event=row["last_event"],
@@ -123,14 +124,14 @@ class DatabaseService:
                     """
                     UPDATE postal.ip_addresses
                     SET priority = %s,
-                        "oldPriority" = CASE
-                            WHEN "oldPriority" IS NULL THEN %s
-                            ELSE "oldPriority"  -- Preserve existing oldPriority (FR-014)
+                        oldPriority = CASE
+                            WHEN oldPriority IS NULL THEN %s
+                            ELSE oldPriority
                         END,
-                        "blockingLists" = %s,
-                        "lastEvent" = %s
+                        blockingLists = %s,
+                        lastEvent = %s
                     WHERE id = %s
-                      AND "blockingLists" != %s  -- Only update if changed
+                      AND blockingLists != %s
                 """,
                     (
                         listed_priority,
@@ -169,11 +170,11 @@ class DatabaseService:
                     """
                     UPDATE postal.ip_addresses
                     SET priority = %s,
-                        "oldPriority" = NULL,
-                        "blockingLists" = '',
-                        "lastEvent" = 'block removed'
+                        oldPriority = NULL,
+                        blockingLists = '',
+                        lastEvent = 'block removed'
                     WHERE id = %s
-                      AND "blockingLists" != ''  -- Only update if currently listed
+                      AND blockingLists != ''
                 """,
                     (restore_priority, ip_id),
                 )
@@ -202,10 +203,10 @@ class DatabaseService:
                 cur.execute(
                     """
                     UPDATE postal.ip_addresses
-                    SET "blockingLists" = %s,
-                        "lastEvent" = %s
+                    SET blockingLists = %s,
+                        lastEvent = %s
                     WHERE id = %s
-                      AND "blockingLists" != %s  -- Only update if changed
+                      AND blockingLists != %s
                 """,
                     (sorted_zones, last_event, ip_id, sorted_zones),
                 )

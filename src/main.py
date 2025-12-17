@@ -113,15 +113,17 @@ def process_ip(
             )
             stats["cleaned"] = 1
 
-            # Add comment to existing Jira issue
+            # Add comment and close Jira issue
             if jira_client:
                 existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
                 if existing_issue:
                     jira_client.add_comment(
                         existing_issue["key"],
-                        f"IP {ip_record.ip} is now clean (no longer listed)",
+                        f"IP {ip_record.ip} is now clean (no longer listed). Closing ticket.",
                     )
-                    jira_action = "updated_issue"
+                    # Transition issue to Done
+                    jira_client.transition_issue_to_done(existing_issue["key"])
+                    jira_action = "closed_issue"
                     stats["jira_updated"] = 1
 
         elif transition.previous_state == "LISTED" and transition.new_state == "LISTED":

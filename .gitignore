@@ -66,3 +66,7 @@ logs/
 # Build artifacts
 *.pyc
 *.pyo
+
+# Docker volumes (database data)
+mariadb-dev/data/
+!mariadb-dev/data/.gitkeep

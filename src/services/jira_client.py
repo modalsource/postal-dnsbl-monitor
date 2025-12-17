@@ -125,6 +125,37 @@ class JiraClient:
             raise
 
     @exponential_backoff_retry()
+    def transition_issue_to_done(self, issue_key: str) -> None:
+        """Transition issue to Done status when IP is cleared.
+
+        Args:
+            issue_key: Jira issue key to close.
+        """
+        try:
+            # Get available transitions for this issue
+            transitions = self.jira.transitions(issue_key)
+
+            # Find the "Done" transition ID (case-insensitive)
+            done_transition_id = None
+            for transition in transitions:
+                if transition["name"].lower() == "done":
+                    done_transition_id = transition["id"]
+                    break
+
+            if not done_transition_id:
+                logger.warning(
+                    f"No 'Done' transition found for {issue_key}, available: {[t['name'] for t in transitions]}"
+                )
+                return
+
+            # Transition the issue
+            self.jira.transition_issue(issue_key, done_transition_id)
+            logger.info(f"Transitioned {issue_key} to Done")
+        except JIRAError as e:
+            logger.error(f"Failed to transition {issue_key} to Done: {e}")
+            raise
+
+    @exponential_backoff_retry()
     def create_dns_failure_issue(
         self, unknown_percentage: float, failed_zones: list[str]
     ) -> str:
