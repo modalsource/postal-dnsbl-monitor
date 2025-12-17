@@ -44,5 +44,5 @@ uv run --env-file .env python -m src.main
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}Dry run completata!${NC}"
+echo -e "${GREEN}Run completata!${NC}"
 echo -e "${GREEN}========================================${NC}"
