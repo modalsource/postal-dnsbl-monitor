@@ -28,4 +28,4 @@ data:
   JIRA_EXCLUDED_STATUSES: "Done,Closed,Resolved"
   
   # Operational
-  DRY_RUN: "true"
+  DRY_RUN: "false"

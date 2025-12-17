@@ -2,7 +2,6 @@
 
 from datetime import datetime
 
-import pytest
 
 from src.models.dns_result import DNSResult, DNSStatus
 from src.models.ip_record import IPRecord

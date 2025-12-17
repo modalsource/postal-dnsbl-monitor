@@ -13,7 +13,6 @@ from src.services.logger import (
     setup_logging,
     log_job_summary,
     log_ip_check,
-    log_dns_failure,
 )
 
 
@@ -26,7 +25,7 @@ def process_ip(
     dns_timeout: int,
     dns_concurrency: int,
     db_service: DatabaseService,
-    jira_client: JiraClient,
+    jira_client: JiraClient | None,
     config: Config,
 ) -> dict:
     """Process a single IP address.
@@ -94,17 +93,18 @@ def process_ip(
             stats["listed"] = 1
 
             # Create Jira issue if none exists
-            existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
-            if not existing_issue:
-                description = f"IP {ip_record.ip} has been listed on {len(transition.listed_zones)} DNSBL zone(s):\n"
-                description += "\n".join(
-                    f"- {zone}" for zone in transition.listed_zones
-                )
-                jira_client.create_issue(
-                    ip_record.ip, transition.listed_zones, description
-                )
-                jira_action = "created_issue"
-                stats["jira_created"] = 1
+            if jira_client:
+                existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
+                if not existing_issue:
+                    description = f"IP {ip_record.ip} has been listed on {len(transition.listed_zones)} DNSBL zone(s):\n"
+                    description += "\n".join(
+                        f"- {zone}" for zone in transition.listed_zones
+                    )
+                    jira_client.create_issue(
+                        ip_record.ip, transition.listed_zones, description
+                    )
+                    jira_action = "created_issue"
+                    stats["jira_created"] = 1
 
         elif transition.previous_state == "LISTED" and transition.new_state == "CLEAN":
             # Listed → Clean
@@ -114,14 +114,15 @@ def process_ip(
             stats["cleaned"] = 1
 
             # Add comment to existing Jira issue
-            existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
-            if existing_issue:
-                jira_client.add_comment(
-                    existing_issue["key"],
-                    f"IP {ip_record.ip} is now clean (no longer listed)",
-                )
-                jira_action = "updated_issue"
-                stats["jira_updated"] = 1
+            if jira_client:
+                existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
+                if existing_issue:
+                    jira_client.add_comment(
+                        existing_issue["key"],
+                        f"IP {ip_record.ip} is now clean (no longer listed)",
+                    )
+                    jira_action = "updated_issue"
+                    stats["jira_updated"] = 1
 
         elif transition.previous_state == "LISTED" and transition.new_state == "LISTED":
             # Listed → Listed (zone change)
@@ -131,19 +132,24 @@ def process_ip(
             stats["listed"] = 1
 
             # Add comment to existing Jira issue
-            existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
-            if existing_issue:
-                comment = f"Zone membership changed:\n"
-                if transition.zone_delta["added"]:
-                    comment += f"Added: {', '.join(transition.zone_delta['added'])}\n"
-                if transition.zone_delta["removed"]:
+            if jira_client:
+                existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
+                if existing_issue:
+                    comment = "Zone membership changed:\n"
+                    if transition.zone_delta["added"]:
+                        comment += (
+                            f"Added: {', '.join(transition.zone_delta['added'])}\n"
+                        )
+                    if transition.zone_delta["removed"]:
+                        comment += (
+                            f"Removed: {', '.join(transition.zone_delta['removed'])}\n"
+                        )
                     comment += (
-                        f"Removed: {', '.join(transition.zone_delta['removed'])}\n"
+                        f"Currently listed on: {', '.join(transition.listed_zones)}"
                     )
-                comment += f"Currently listed on: {', '.join(transition.listed_zones)}"
-                jira_client.add_comment(existing_issue["key"], comment)
-                jira_action = "updated_issue"
-                stats["jira_updated"] = 1
+                    jira_client.add_comment(existing_issue["key"], comment)
+                    jira_action = "updated_issue"
+                    stats["jira_updated"] = 1
     else:
         # DRY_RUN mode - log what would happen
         logger.info(
@@ -191,15 +197,19 @@ def main() -> int:
         # Initialize services
         dsn = config.get_db_connection_string()
         db_service = DatabaseService(dsn)
-        jira_client = JiraClient(
-            server=config.jira_server,
-            user=config.jira_user,
-            token=config.jira_api_token,
-            project=config.jira_project,
-            issue_type=config.jira_issue_type,
-            dns_failure_issue_type=config.jira_dns_failure_issue_type,
-            excluded_statuses=config.jira_excluded_statuses,
-        )
+
+        # Only initialize Jira client if not in DRY_RUN mode
+        jira_client = None
+        if not config.dry_run:
+            jira_client = JiraClient(
+                server=config.jira_server,
+                user=config.jira_user,
+                token=config.jira_api_token,
+                project=config.jira_project,
+                issue_type=config.jira_issue_type,
+                dns_failure_issue_type=config.jira_dns_failure_issue_type,
+                excluded_statuses=config.jira_excluded_statuses,
+            )
 
         # Fetch all IPs from database (FR-006)
         ip_records = db_service.get_all_ips()

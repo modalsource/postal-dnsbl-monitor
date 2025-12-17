@@ -1,7 +1,6 @@
 """IP address utilities for DNSBL queries."""
 
 import ipaddress
-import re
 
 
 def is_valid_ipv4(ip: str) -> bool:

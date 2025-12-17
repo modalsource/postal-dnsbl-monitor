@@ -17,6 +17,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "testcontainers>=3.7.0",
     "responses>=0.23.0",
+    "ruff>=0.8.0",
 ]
 
 [build-system]
