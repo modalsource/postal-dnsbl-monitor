@@ -14,17 +14,17 @@ Avvia il container MariaDB con i dati di test:
 
 ```bash
 cd /home/fulgidus/Documenti/postal-dnsbl-monitor
-docker-compose up -d
+docker compose up -d
 ```
 
 Verifica che il database sia attivo:
 
 ```bash
 # Attendere circa 10 secondi per l'inizializzazione
-docker-compose logs db
+docker compose logs db
 
 # Connettersi al database per verificare
-docker-compose exec db mysql -uroot -proot postal -e "SELECT id, ipv4, hostname, priority, blockingLists FROM ip_addresses;"
+docker compose exec db mysql -uroot -proot postal -e "SELECT id, ipv4, hostname, priority, blockingLists FROM ip_addresses;"
 ```
 
 Dovresti vedere 8 IP address con priority=100 e blockingLists vuoto.
@@ -152,7 +152,7 @@ Per testare SOLO le scritture DB (senza Jira), puoi commentare temporaneamente l
 Dopo un'esecuzione con DRY_RUN=false, controlla le modifiche:
 
 ```bash
-docker-compose exec db mysql -uroot -proot postal -e "SELECT id, ipv4, priority, oldPriority, blockingLists, lastEvent FROM ip_addresses;"
+docker compose exec db mysql -uroot -proot postal -e "SELECT id, ipv4, priority, oldPriority, blockingLists, lastEvent FROM ip_addresses;"
 ```
 
 Cerca:
@@ -168,8 +168,8 @@ Cerca:
 Per resettare il database ai dati iniziali:
 
 ```bash
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 # Attendere 10 secondi per re-inizializzazione
 ```
 

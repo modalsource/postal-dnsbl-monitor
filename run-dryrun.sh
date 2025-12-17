@@ -40,7 +40,7 @@ echo ""
 echo -e "${YELLOW}Eseguendo Postal DNSBL Monitor...${NC}"
 echo ""
 
-uv run python -m src.main
+uv run --env-file .env python -m src.main
 
 echo ""
 echo -e "${GREEN}========================================${NC}"

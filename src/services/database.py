@@ -38,9 +38,13 @@ def get_db_connection(
         password=parsed.password,
         database=parsed.path.lstrip("/"),
         autocommit=False,
-        isolation_level="READ-COMMITTED",
     )
     try:
+        # Set transaction isolation level to READ COMMITTED
+        cursor = conn.cursor()
+        cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
+        cursor.close()
+
         yield conn
         conn.commit()  # Commit on successful context exit
     except Exception:
