@@ -208,6 +208,14 @@ dev = [
     { name = "testcontainers" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "responses" },
+    { name = "testcontainers" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "dnspython", specifier = ">=2.4.0" },
@@ -221,6 +229,14 @@ requires-dist = [
     { name = "testcontainers", marker = "extra == 'dev'", specifier = ">=3.7.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "responses", specifier = ">=0.25.8" },
+    { name = "testcontainers", specifier = ">=4.13.3" },
+]
 
 [[package]]
 name = "pygments"

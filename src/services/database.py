@@ -99,7 +99,12 @@ class DatabaseService:
                 ]
 
     def update_ip_listed(
-        self, ip_id: int, current_priority: int, zones: list[str], listed_priority: int
+        self,
+        ip_id: int,
+        ip_address: str,
+        current_priority: int,
+        zones: list[str],
+        listed_priority: int,
     ) -> bool:
         """Idempotent update for clean → listed transition (FR-015).
 
@@ -108,6 +113,7 @@ class DatabaseService:
 
         Args:
             ip_id: Database ID of IP record.
+            ip_address: IP address (for logging).
             current_priority: Current priority value (for setting oldPriority).
             zones: List of DNSBL zones where IP is listed.
             listed_priority: Priority value to set for listed IPs.
@@ -146,10 +152,21 @@ class DatabaseService:
                         sorted_zones,
                     ),
                 )
-                return cur.rowcount > 0  # True if row was updated
+                updated = cur.rowcount > 0
+
+                if updated:
+                    logger.info(
+                        f"Database update: IP {ip_address} CLEAN → LISTED (priority {current_priority} → {listed_priority}, {len(zones)} zones)"
+                    )
+
+                return updated
 
     def update_ip_clean(
-        self, ip_id: int, old_priority: Optional[int], clean_fallback: int
+        self,
+        ip_id: int,
+        ip_address: str,
+        old_priority: Optional[int],
+        clean_fallback: int,
     ) -> bool:
         """Idempotent update for listed → clean transition (FR-015).
 
@@ -157,6 +174,7 @@ class DatabaseService:
 
         Args:
             ip_id: Database ID of IP record.
+            ip_address: IP address (for logging).
             old_priority: Backed-up priority to restore (or None if missing).
             clean_fallback: Fallback priority if old_priority is None.
 
@@ -182,15 +200,26 @@ class DatabaseService:
                 """,
                     (restore_priority, ip_id),
                 )
-                return cur.rowcount > 0
+                updated = cur.rowcount > 0
 
-    def update_ip_zone_change(self, ip_id: int, zones: list[str]) -> bool:
+                if updated:
+                    fallback_note = " (using fallback)" if old_priority is None else ""
+                    logger.info(
+                        f"Database update: IP {ip_address} LISTED → CLEAN (priority restored to {restore_priority}{fallback_note})"
+                    )
+
+                return updated
+
+    def update_ip_zone_change(
+        self, ip_id: int, ip_address: str, zones: list[str]
+    ) -> bool:
         """Idempotent update for listed → listed (zone change) transition (FR-015).
 
         Updates blockingLists while preserving priority and oldPriority.
 
         Args:
             ip_id: Database ID of IP record.
+            ip_address: IP address (for logging).
             zones: New list of DNSBL zones where IP is listed.
 
         Returns:
@@ -214,4 +243,11 @@ class DatabaseService:
                 """,
                     (sorted_zones, last_event, ip_id, sorted_zones),
                 )
-                return cur.rowcount > 0
+                updated = cur.rowcount > 0
+
+                if updated:
+                    logger.info(
+                        f"Database update: IP {ip_address} LISTED → LISTED (zone change, now {len(zones)} zones)"
+                    )
+
+                return updated

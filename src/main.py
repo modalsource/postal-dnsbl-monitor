@@ -86,6 +86,7 @@ def process_ip(
             # Clean → Listed
             db_updated = db_service.update_ip_listed(
                 ip_record.id,
+                ip_record.ip,
                 ip_record.priority,
                 transition.listed_zones,
                 config.listed_priority,
@@ -109,7 +110,10 @@ def process_ip(
         elif transition.previous_state == "LISTED" and transition.new_state == "CLEAN":
             # Listed → Clean
             db_updated = db_service.update_ip_clean(
-                ip_record.id, ip_record.old_priority, config.clean_fallback_priority
+                ip_record.id,
+                ip_record.ip,
+                ip_record.old_priority,
+                config.clean_fallback_priority,
             )
             stats["cleaned"] = 1
 
@@ -129,7 +133,7 @@ def process_ip(
         elif transition.previous_state == "LISTED" and transition.new_state == "LISTED":
             # Listed → Listed (zone change)
             db_updated = db_service.update_ip_zone_change(
-                ip_record.id, transition.listed_zones
+                ip_record.id, ip_record.ip, transition.listed_zones
             )
             stats["listed"] = 1
 
