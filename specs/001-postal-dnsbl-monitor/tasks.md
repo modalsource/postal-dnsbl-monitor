@@ -27,14 +27,14 @@ Single-project CLI batch job structure (per plan.md):
 
 **Purpose**: Project initialization, dependency management, and basic structure
 
-- [ ] T001 Create project directory structure with src/, tests/, kubernetes/ directories
-- [ ] T002 Initialize Python 3.14 project with pyproject.toml per research.md section 6
-- [ ] T003 [P] Configure uv dependency management with uv.lock for dnspython, jira, psycopg2-binary, python-json-logger
-- [ ] T004 [P] Create .gitignore with Python, IDE, and Kubernetes-specific exclusions
-- [ ] T005 [P] Create .dockerignore for multi-stage Docker build optimization
-- [ ] T006 [P] Create README.md with project overview and quickstart reference link
-- [ ] T007 [P] Create src/__init__.py as package marker
-- [ ] T008 [P] Create tests/__init__.py as test package marker
+- [X] T001 Create project directory structure with src/, tests/, kubernetes/ directories
+- [X] T002 Initialize Python 3.14 project with pyproject.toml per research.md section 6
+- [X] T003 [P] Configure uv dependency management with uv.lock for dnspython, jira, psycopg2-binary, python-json-logger
+- [X] T004 [P] Create .gitignore with Python, IDE, and Kubernetes-specific exclusions
+- [X] T005 [P] Create .dockerignore for multi-stage Docker build optimization
+- [X] T006 [P] Create README.md with project overview and quickstart reference link
+- [X] T007 [P] Create src/__init__.py as package marker
+- [X] T008 [P] Create tests/__init__.py as test package marker
 
 ---
 
@@ -46,31 +46,31 @@ Single-project CLI batch job structure (per plan.md):
 
 ### Configuration and Logging Foundation
 
-- [ ] T009 Create src/config.py to load and validate environment variables per contracts/config-schema.yaml
-- [ ] T010 [P] Create src/services/logger.py for structured JSON logging per contracts/log-format.json and research.md section 4
-- [ ] T011 [P] Create src/utils/__init__.py as utils package marker
-- [ ] T012 [P] Create src/utils/ip_utils.py with IPv4 validation and reverse DNS formatting per research.md section 1
-- [ ] T013 [P] Create src/utils/retry.py with exponential backoff decorator (2s, 4s, 8s) per research.md section 2, including unit test verifying retry timing matches spec clarification
+- [X] T009 Create src/config.py to load and validate environment variables per contracts/config-schema.yaml
+- [X] T010 [P] Create src/services/logger.py for structured JSON logging per contracts/log-format.json and research.md section 4
+- [X] T011 [P] Create src/utils/__init__.py as utils package marker
+- [X] T012 [P] Create src/utils/ip_utils.py with IPv4 validation and reverse DNS formatting per research.md section 1
+- [X] T013 [P] Create src/utils/retry.py with exponential backoff decorator (2s, 4s, 8s) per research.md section 2, including unit test verifying retry timing matches spec clarification
 
 ### Data Models Foundation
 
-- [ ] T014 Create src/models/__init__.py as models package marker
-- [ ] T015 [P] Create src/models/dns_result.py with DNSStatus enum (LISTED/NOT_LISTED/UNKNOWN) per data-model.md section 2
-- [ ] T016 [P] Create src/models/ip_record.py with IP Address Record dataclass per data-model.md section 1
+- [X] T014 Create src/models/__init__.py as models package marker
+- [X] T015 [P] Create src/models/dns_result.py with DNSStatus enum (LISTED/NOT_LISTED/UNKNOWN) per data-model.md section 2
+- [X] T016 [P] Create src/models/ip_record.py with IP Address Record dataclass per data-model.md section 1
 
 ### Services Foundation
 
-- [ ] T017 Create src/services/__init__.py as services package marker
-- [ ] T018 Create src/services/database.py with PostgreSQL connection, context manager, READ COMMITTED isolation per research.md section 3
-- [ ] T019 Create src/services/dns_checker.py with dnspython + ThreadPoolExecutor for concurrent DNSBL queries per research.md section 1
-- [ ] T020 Create src/services/jira_client.py with JQL search, issue create/update, exponential backoff per research.md section 2
+- [X] T017 Create src/services/__init__.py as services package marker
+- [X] T018 Create src/services/database.py with PostgreSQL connection, context manager, READ COMMITTED isolation per research.md section 3
+- [X] T019 Create src/services/dns_checker.py with dnspython + ThreadPoolExecutor for concurrent DNSBL queries per research.md section 1
+- [X] T020 Create src/services/jira_client.py with JQL search, issue create/update, exponential backoff per research.md section 2
 
 ### Testing Infrastructure
 
-- [ ] T021 Create tests/conftest.py with pytest fixtures for PostgreSQL (testcontainers), Jira mocking, DNS mocking per research.md section 7
-- [ ] T022 [P] Create tests/unit/__init__.py as unit test package marker
-- [ ] T023 [P] Create tests/integration/__init__.py as integration test package marker
-- [ ] T024 [P] Create tests/contract/__init__.py as contract test package marker
+- [X] T021 Create tests/conftest.py with pytest fixtures for PostgreSQL (testcontainers), Jira mocking, DNS mocking per research.md section 7
+- [X] T022 [P] Create tests/unit/__init__.py as unit test package marker
+- [X] T023 [P] Create tests/integration/__init__.py as integration test package marker
+- [X] T024 [P] Create tests/contract/__init__.py as contract test package marker
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -86,17 +86,17 @@ Single-project CLI batch job structure (per plan.md):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T025 [P] [US1] Contract test for oldPriority single-write invariant in tests/contract/test_invariants.py per data-model.md section "Data Integrity Verification"
-- [ ] T026 [P] [US1] Contract test for blockingLists deterministic sorting in tests/contract/test_invariants.py per FR-014
-- [ ] T027 [P] [US1] Contract test for idempotency (re-run with same state = zero writes) in tests/contract/test_idempotency.py per FR-032
-- [ ] T028 [P] [US1] Contract test for Jira deduplication via JQL search in tests/contract/test_deduplication.py per FR-020
+- [X] T025 [P] [US1] Contract test for oldPriority single-write invariant in tests/contract/test_invariants.py per data-model.md section "Data Integrity Verification"
+- [X] T026 [P] [US1] Contract test for blockingLists deterministic sorting in tests/contract/test_invariants.py per FR-014
+- [X] T027 [P] [US1] Contract test for idempotency (re-run with same state = zero writes) in tests/contract/test_idempotency.py per FR-032
+- [X] T028 [P] [US1] Contract test for Jira deduplication via JQL search in tests/contract/test_deduplication.py per FR-020
 
 ### Unit Tests for User Story 1
 
-- [ ] T029 [P] [US1] Unit test for config validation in tests/unit/test_config.py with mock environment variables, including JIRA_DNS_FAILURE_ISSUE_TYPE per FR-013a
-- [ ] T030 [P] [US1] Unit test for IP reverse DNS formatting in tests/unit/test_ip_utils.py per data-model.md section 2
+- [X] T029 [P] [US1] Unit test for config validation in tests/unit/test_config.py with mock environment variables, including JIRA_DNS_FAILURE_ISSUE_TYPE per FR-013a
+- [X] T030 [P] [US1] Unit test for IP reverse DNS formatting in tests/unit/test_ip_utils.py per data-model.md section 2
 - [ ] T031 [P] [US1] Unit test for DNS classification logic (LISTED/NOT_LISTED/UNKNOWN) in tests/unit/test_dns_result.py per FR-009
-- [ ] T032 [P] [US1] Unit test for state transition logic (clean→listed, listed→clean) in tests/unit/test_state_transition.py per data-model.md section "State Transition Rules"
+- [X] T032 [P] [US1] Unit test for state transition logic (clean→listed, listed→clean) in tests/unit/test_state_transition.py per data-model.md section "State Transition Rules"
 
 ### Integration Tests for User Story 1
 
@@ -105,21 +105,21 @@ Single-project CLI batch job structure (per plan.md):
 
 ### Implementation for User Story 1
 
-- [ ] T035 [US1] Implement get_all_ips() in src/services/database.py to query postal.ip_addresses table per FR-006
-- [ ] T036 [US1] Implement update_ip_listed() with idempotent conditional UPDATE in src/services/database.py per FR-015 clean→listed transition
-- [ ] T037 [US1] Implement update_ip_clean() with oldPriority restoration in src/services/database.py per FR-015 listed→clean transition
-- [ ] T038 [US1] Implement update_ip_zone_change() for listed→listed transitions in src/services/database.py per FR-015
-- [ ] T039 [US1] Implement check_dnsbl() for single IP-zone query in src/services/dns_checker.py per research.md section 1
-- [ ] T040 [US1] Implement check_ip_concurrent() with ThreadPoolExecutor in src/services/dns_checker.py per FR-011
-- [ ] T041 [US1] Implement find_open_issue_for_ip() with JQL search in src/services/jira_client.py per FR-021
-- [ ] T042 [US1] Implement create_issue() with deterministic summary format in src/services/jira_client.py per FR-022
-- [ ] T043 [US1] Implement add_comment() for issue updates in src/services/jira_client.py per FR-024
-- [ ] T044 [US1] Create src/models/state_transition.py with state transition decision logic per data-model.md section 3
-- [ ] T045 [US1] Implement main execution loop in src/main.py orchestrating database fetch, DNS checks, state transitions, Jira actions per FR-001
-- [ ] T046 [US1] Add per-IP structured logging in src/main.py per FR-028 and contracts/log-format.json
-- [ ] T047 [US1] Add job summary logging in src/main.py per FR-031
-- [ ] T048 [US1] Implement DRY_RUN mode logic in src/main.py per FR-003
-- [ ] T049 [US1] Implement fatal error handling (database unreachable, Jira auth failure) with exit code 1 in src/main.py per FR-004, FR-030
+- [X] T035 [US1] Implement get_all_ips() in src/services/database.py to query postal.ip_addresses table per FR-006
+- [X] T036 [US1] Implement update_ip_listed() with idempotent conditional UPDATE in src/services/database.py per FR-015 clean→listed transition
+- [X] T037 [US1] Implement update_ip_clean() with oldPriority restoration in src/services/database.py per FR-015 listed→clean transition
+- [X] T038 [US1] Implement update_ip_zone_change() for listed→listed transitions in src/services/database.py per FR-015
+- [X] T039 [US1] Implement check_dnsbl() for single IP-zone query in src/services/dns_checker.py per research.md section 1
+- [X] T040 [US1] Implement check_ip_concurrent() with ThreadPoolExecutor in src/services/dns_checker.py per FR-011
+- [X] T041 [US1] Implement find_open_issue_for_ip() with JQL search in src/services/jira_client.py per FR-021
+- [X] T042 [US1] Implement create_issue() with deterministic summary format in src/services/jira_client.py per FR-022
+- [X] T043 [US1] Implement add_comment() for issue updates in src/services/jira_client.py per FR-024
+- [X] T044 [US1] Create src/models/state_transition.py with state transition decision logic per data-model.md section 3
+- [X] T045 [US1] Implement main execution loop in src/main.py orchestrating database fetch, DNS checks, state transitions, Jira actions per FR-001
+- [X] T046 [US1] Add per-IP structured logging in src/main.py per FR-028 and contracts/log-format.json
+- [X] T047 [US1] Add job summary logging in src/main.py per FR-031
+- [X] T048 [US1] Implement DRY_RUN mode logic in src/main.py per FR-003
+- [X] T049 [US1] Implement fatal error handling (database unreachable, Jira auth failure) with exit code 1 in src/main.py per FR-004, FR-030
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - IPs can be throttled, tickets created, idempotency verified
 

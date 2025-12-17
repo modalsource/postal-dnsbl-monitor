@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postal-dnsbl-monitor
+  namespace: postal
+spec:
+  # Run every 15 minutes
+  schedule: "*/15 * * * *"
+  
+  # Don't allow overlapping jobs
+  concurrencyPolicy: Forbid
+  
+  # Keep last 3 successful and 5 failed jobs for debugging
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  
+  jobTemplate:
+    spec:
+      # No retries - stateless job, fail-fast (FR-007)
+      backoffLimit: 0
+      
+      template:
+        metadata:
+          labels:
+            app: postal-dnsbl-monitor
+        spec:
+          restartPolicy: Never
+          
+          containers:
+          - name: monitor
+            image: postal-dnsbl-monitor:latest
+            imagePullPolicy: IfNotPresent
+            
+            # Resource limits per research.md section 5
+            resources:
+              requests:
+                cpu: 250m
+                memory: 256Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+            
+            # Environment from ConfigMap (non-sensitive)
+            envFrom:
+            - configMapRef:
+                name: dnsbl-config
+            
+            # Environment from Secret (sensitive)
+            env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dnsbl-secrets
+                  key: DB_PASSWORD
+            - name: JIRA_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dnsbl-secrets
+                  key: JIRA_API_TOKEN
+            
+            # Security context
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
