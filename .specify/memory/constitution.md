@@ -2,14 +2,14 @@
 Sync Impact Report - Constitution Update
 =========================================
 
-Version Change: 1.0.0 → 1.1.0
-Type: MINOR (Added uv dependency management requirement)
+Version Change: 1.1.0 → 1.2.0
+Type: MINOR (Specified PostgreSQL as database requirement)
 
 Modified Principles:
 - (none)
 
 Modified Sections:
-- Technical Stack & Dependencies: Added mandatory uv dependency manager with rationale
+- Technical Stack & Dependencies: Specified PostgreSQL driver requirement (psycopg2/psycopg2-binary)
 
 Added Sections:
 - (none in this update)
@@ -24,11 +24,12 @@ Templates Requiring Updates:
 
 Follow-up TODOs:
 - Ensure Dockerfile uses uv for dependency installation
-- Create pyproject.toml with PEP 621 metadata
-- Update any existing setup documentation to reference uv
+- Create pyproject.toml with PEP 621 metadata and psycopg2 dependency
+- Update any existing setup documentation to reference uv and PostgreSQL
 
 Last Updated: 2025-12-17
 Previous Updates:
+- 2025-12-17: v1.1.0 - Added uv dependency management requirement
 - 2025-12-16: v1.0.0 - Initial constitution ratification
 -->
 
@@ -161,7 +162,7 @@ The project MUST use uv for dependency management. This ensures:
 
 - `dnspython`: DNS lookups with DNSBL zones
 - `jira` (pycontribs): Jira API client for ticket management
-- Database driver compatible with postal schema (e.g., `psycopg2` or `mysqlclient`)
+- PostgreSQL driver: `psycopg2` or `psycopg2-binary` (production Postal instance uses PostgreSQL)
 
 **Container**: Docker image using `uv pip compile` and `uv pip install` or `uv sync --frozen`
 
@@ -181,25 +182,25 @@ The implementation MUST satisfy these testable acceptance criteria:
    - `oldPriority` stores the previous priority value exactly once
    - `blockingLists` contains comma-separated sorted zones
    - `lastEvent` matches pattern "new block from list(s) <zones>"
-   - Exactly one Jira issue exists for that IP (deduped via Jira search)
+   - Exactly one open Jira issue exists for that IP (deduped via Jira search)
 
 3. **List-Set Change**: Given an IP remains listed but the set of listing zones changes,
    THEN:
    - `blockingLists` updates deterministically
-   - Jira does not create a new issue; adds comment or updates summary per configuration
+   - Jira does not create a new issue; adds comment with status update instead
 
 4. **Clearing**: Given an IP becomes clean while currently throttled, THEN:
    - `priority` restores to `oldPriority` (or `CLEAN_FALLBACK_PRIORITY` if NULL)
    - `oldPriority` is set to NULL
    - `blockingLists` is cleared (empty string)
    - `lastEvent` matches "block removed" pattern
-   - Jira issue is commented but not duplicated
+   - Jira issue is commented with status update but not duplicated
 
 5. **Idempotency**: Re-running the job without state changes produces no additional Jira
-   issues and no DB writes.
+   issues, no additional comments, and no DB writes.
 
 6. **DNS Fault Tolerance**: Transient DNS failures (UNKNOWN) are logged and included in
-   Jira descriptions but do not alone trigger throttling.
+   Jira descriptions but do not alone trigger throttling. Any DNS failure must be alerted via either Jira or Email to the operations team so that they can decide if they need to edit the DNSBL list.
 
 ## Governance
 
@@ -224,4 +225,4 @@ compliance with the principles above.
 - Code reviews MUST verify adherence to data integrity invariants, idempotency, and
   observability requirements
 
-**Version**: 1.1.0 | **Ratified**: 2025-12-16 | **Last Amended**: 2025-12-17
+**Version**: 1.2.0 | **Ratified**: 2025-12-16 | **Last Amended**: 2025-12-17
