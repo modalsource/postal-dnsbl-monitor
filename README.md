@@ -53,6 +53,3 @@ export DRY_RUN=true
 python src/main.py
 ```
 
-## License
-
-[Your License Here]
