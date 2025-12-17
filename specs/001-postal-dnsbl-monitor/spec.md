@@ -20,7 +20,7 @@
 
 ### User Story 1 - Automated Email Deliverability Protection (Priority: P1)
 
-Operations teams need to ensure email servers remain unthrottled and deliverable by detecting and responding to DNSBL listings before they impact email delivery rates. When an IP address becomes listed on any DNS-based blacklist, the system must automatically detect the listing, throttle the affected IP to protect sender reputation, and create a tracking ticket so operations can investigate and remediate.
+Operations teams need to ensure email servers remain deliverable by detecting and responding to DNSBL listings before they impact email delivery rates. When an IP address becomes listed on any DNS-based blacklist, the system must automatically detect the listing, reduce the IP's priority to protect sender reputation, and create a tracking ticket so operations can investigate and remediate.
 
 **Why this priority**: This is the core value proposition - preventing email delivery failures and protecting sender reputation is critical to the business. Without this capability, blacklisted IPs continue sending mail, damaging reputation and causing delivery failures.
 
@@ -32,9 +32,9 @@ Operations teams need to ensure email servers remain unthrottled and deliverable
 
 2. **Given** an IP address with priority=50 becomes newly listed on zen.spamhaus.org, **When** the monitor job runs, **Then** priority changes to LISTED_PRIORITY (e.g., 0), oldPriority is set to 50 (exactly once), blockingLists contains "zen.spamhaus.org", lastEvent describes the new listing, and exactly one Jira ticket is created with summary "IP 203.0.113.45 blacklisted by zen.spamhaus.org".
 
-3. **Given** an IP is already throttled (priority=0, oldPriority=50, blockingLists="zen.spamhaus.org"), **When** the monitor job runs and finds the same listing state, **Then** no database writes occur and no new Jira tickets or comments are created (idempotency).
+3. **Given** an IP is already listed (priority=0, oldPriority=50, blockingLists="zen.spamhaus.org"), **When** the monitor job runs and finds the same listing state, **Then** no database writes occur and no new Jira tickets or comments are created (idempotency).
 
-4. **Given** an IP is throttled and listed on zen.spamhaus.org, **When** it becomes clean (no longer listed), **Then** priority is restored to oldPriority (50), oldPriority is set to NULL, blockingLists is cleared, lastEvent describes block removal, and the existing Jira ticket receives a comment indicating the IP is now clean.
+4. **Given** an IP is listed on zen.spamhaus.org, **When** it becomes clean (no longer listed), **Then** priority is restored to oldPriority (50), oldPriority is set to NULL, blockingLists is cleared, lastEvent describes block removal, and the existing Jira ticket receives a comment indicating the IP is now clean.
 
 ---
 
@@ -50,7 +50,7 @@ When an IP is listed on multiple DNSBLs or the set of listing blacklists changes
 
 1. **Given** an IP becomes listed on both zen.spamhaus.org and bl.spamcop.net simultaneously, **When** the monitor job runs, **Then** blockingLists contains "bl.spamcop.net,zen.spamhaus.org" (sorted, comma-separated), the Jira summary includes both zones, and exactly one ticket is created.
 
-2. **Given** an IP is throttled with blockingLists="zen.spamhaus.org", **When** it becomes additionally listed on bl.spamcop.net (now listed on two zones), **Then** blockingLists updates to "bl.spamcop.net,zen.spamhaus.org", lastEvent describes the list-set change, and the existing Jira ticket receives a comment indicating the new listing (no new ticket created).
+2. **Given** an IP is listed with blockingLists="zen.spamhaus.org", **When** it becomes additionally listed on bl.spamcop.net (now listed on two zones), **Then** blockingLists updates to "bl.spamcop.net,zen.spamhaus.org", lastEvent describes the list-set change, and the existing Jira ticket receives a comment indicating the new listing (no new ticket created).
 
 3. **Given** an IP is listed on two zones and one zone clears while the other remains, **When** the monitor job runs, **Then** blockingLists updates to reflect only the remaining zone, lastEvent describes the change, and the existing Jira ticket is updated with a comment (not closed, since IP is still listed).
 
@@ -70,7 +70,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 2. **Given** all DNS queries for an IP return UNKNOWN (complete DNS failure), **When** the monitor job runs, **Then** no database changes occur for that IP, the failure is logged with structured data, and if more than 50% of configured DNSBL zones return UNKNOWN, a Jira issue is created with issue type for DNS failures, labeled "MAJOR MALFUNCTION", containing detailed explanation and execution logs up to that point.
 
-3. **Given** an IP is currently listed and a subsequent job run returns UNKNOWN for all zones, **When** the monitor job runs, **Then** the IP remains throttled (no change to priority/oldPriority/blockingLists), and the uncertainty is logged for operational review.
+3. **Given** an IP is currently listed and a subsequent job run returns UNKNOWN for all zones, **When** the monitor job runs, **Then** the IP remains listed (no change to priority/oldPriority/blockingLists), and the uncertainty is logged for operational review.
 
 ---
 
@@ -127,7 +127,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 - **FR-012**: System MUST aggregate per-zone results for each IP to produce a final listing decision:
   - **IP is LISTED** if at least one zone returns LISTED
-  - **IP is CLEAN** if zero zones return LISTED (UNKNOWN results do not trigger throttling)
+  - **IP is CLEAN** if zero zones return LISTED (UNKNOWN results do not trigger priority changes)
 
 - **FR-013**: System MUST log all UNKNOWN DNS results with structured data (IP, zone, error type, timestamp) for operational monitoring and alerting.
 
@@ -211,7 +211,7 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 ### Key Entities *(include if feature involves data)*
 
-- **IP Address Record**: Represents a mail server IP address in the postal.ip_addresses table. Key attributes: unique IP address (IPv4 dotted-quad), current priority (throttling level), oldPriority (backup for restoration), blockingLists (comma-separated sorted DNSBL zones), lastEvent (human-readable state transition description). Relationships: One IP to zero-or-one open Jira issue (deduped via Jira search).
+- **IP Address Record**: Represents a mail server IP address in the postal.ip_addresses table. Key attributes: unique IP address (IPv4 dotted-quad), current priority (listing status - lower values indicate more severe restrictions), oldPriority (backup for restoration), blockingLists (comma-separated sorted DNSBL zones), lastEvent (human-readable state transition description). Relationships: One IP to zero-or-one open Jira issue (deduped via Jira search).
 
 - **DNSBL Zone**: Represents a DNS-based blacklist provider (e.g., zen.spamhaus.org, bl.spamcop.net). Key attributes: zone domain name. No database representation; loaded from configuration. Each zone is queried independently for each IP.
 
@@ -271,11 +271,11 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
 
 - **IP Address Format**: All IPs in the postal.ip_addresses table are valid IPv4 addresses in dotted-quad notation. System does not support IPv6 (may be a future enhancement).
 
-- **Priority Semantics**: Lower priority values indicate higher throttling (e.g., priority=0 means fully throttled). LISTED_PRIORITY is typically 0, and CLEAN_FALLBACK_PRIORITY is a higher value (e.g., 50).
+- **Priority Semantics**: Lower priority values indicate more severe sending restrictions (e.g., priority=0 means most restricted/listed state). LISTED_PRIORITY is typically 0, and CLEAN_FALLBACK_PRIORITY is a higher value (e.g., 50).
 
 - **Jira Workflow**: Jira issues are manually closed by operations after remediation. System does not auto-close issues even when IPs clear; it only adds comments. The JIRA_EXCLUDED_STATUSES configuration defines which status names indicate "closed" issues (default: "Done,Closed,Resolved") to adapt to different Jira workflow configurations.
 
-- **Job Schedule**: CronJob schedule is configured to allow sufficient time for job completion before the next run starts (e.g., run every 15 minutes with 5-minute job duration).
+- **Job Schedule**: CronJob schedule is configured to allow sufficient time for job completion before the next run starts (e.g., run every 15 minutes with 5-minute max job duration, leaving 10-minute buffer to prevent overlapping executions).
 
 - **Database Transaction Isolation**: PostgreSQL is configured with READ COMMITTED isolation level (default). This prevents dirty reads while allowing concurrent job executions to update different IPs independently, with "last committed wins" semantics for any overlapping updates to the same IP.
 

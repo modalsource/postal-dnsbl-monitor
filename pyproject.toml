@@ -1,11 +1,24 @@
 [project]
 name = "postal-dnsbl-monitor"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "Stateless DNSBL monitoring CronJob for Postal mail server"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "dnspython>=2.8.0",
-    "jira>=3.10.5",
-    "psycopg2>=2.9.11",
+    "dnspython>=2.4.0",
+    "jira>=3.5.0",
+    "psycopg2-binary>=2.9.0",
+    "python-json-logger>=2.0.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "testcontainers>=3.7.0",
+    "responses>=0.23.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

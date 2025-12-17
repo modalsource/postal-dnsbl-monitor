@@ -1,0 +1,62 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Development
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+!README.md
+specs/
+.specify/
+
+# Tests
+tests/
+.coverage
+.coverage.*
+pytest.ini
+
+# Environment
+.env
+.env.*
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+
+# Kubernetes manifests
+kubernetes/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile

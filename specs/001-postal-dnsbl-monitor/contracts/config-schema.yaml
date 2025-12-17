@@ -1,0 +1,293 @@
+---
+# Configuration Schema for Postal DNSBL Monitor
+# 
+# This schema defines all environment variables used by the application.
+# Use this for generating ConfigMaps, Secrets, and documentation.
+
+environment_variables:
+  # ==============================================================================
+  # Database Configuration
+  # ==============================================================================
+  
+  DB_HOST:
+    type: string
+    required: true
+    description: "PostgreSQL server hostname or IP address"
+    example: "postgresql.postal.svc.cluster.local"
+    validation: "Non-empty string, resolvable hostname or IP"
+  
+  DB_PORT:
+    type: integer
+    required: false
+    default: 5432
+    description: "PostgreSQL server port"
+    validation: "1-65535 range"
+  
+  DB_NAME:
+    type: string
+    required: true
+    description: "Database name (typically 'postal')"
+    example: "postal"
+    validation: "Non-empty string"
+  
+  DB_USER:
+    type: string
+    required: true
+    description: "Database username with read/write access to postal.ip_addresses table"
+    example: "dnsbl_monitor"
+    validation: "Non-empty string"
+  
+  DB_PASSWORD:
+    type: string
+    required: true
+    sensitive: true
+    description: "Database password (store in Kubernetes Secret, not ConfigMap)"
+    validation: "Non-empty string"
+  
+  DB_DSN:
+    type: string
+    required: false
+    description: "Optional PostgreSQL DSN (overrides individual DB_* parameters if provided)"
+    example: "postgresql://user:pass@host:5432/postal"
+    validation: "Valid PostgreSQL connection string format"
+    note: "If DB_DSN is provided, individual DB_HOST/PORT/NAME/USER/PASSWORD are ignored"
+  
+  # ==============================================================================
+  # DNSBL Configuration
+  # ==============================================================================
+  
+  DNSBL_ZONES:
+    type: string
+    required: true
+    description: "Comma-separated list of DNSBL zone domains (no spaces)"
+    example: "zen.spamhaus.org,bl.spamcop.net,dnsbl.sorbs.net"
+    validation: "Non-empty, valid DNS domain names separated by commas"
+    note: "Order doesn't matter - results are always sorted alphabetically"
+  
+  DNS_TIMEOUT:
+    type: integer
+    required: false
+    default: 5
+    description: "DNS query timeout in seconds per zone"
+    validation: "1-60 range"
+    note: "Total job time scales with timeout × concurrency × IP count"
+  
+  DNS_CONCURRENCY:
+    type: integer
+    required: false
+    default: 10
+    description: "Maximum number of concurrent DNS queries (ThreadPoolExecutor workers)"
+    validation: "1-100 range"
+    note: "Higher values speed up job but increase memory/network usage"
+  
+  # ==============================================================================
+  # Priority Configuration
+  # ==============================================================================
+  
+  LISTED_PRIORITY:
+    type: integer
+    required: false
+    default: 0
+    description: "Priority value assigned to blacklisted IPs (0 = fully throttled)"
+    validation: "0-100 range, should be < CLEAN_FALLBACK_PRIORITY"
+    note: "Lower values = higher throttling in Postal"
+  
+  CLEAN_FALLBACK_PRIORITY:
+    type: integer
+    required: false
+    default: 50
+    description: "Fallback priority when clearing IP with NULL oldPriority"
+    validation: "0-100 range, should be > LISTED_PRIORITY"
+    note: "Used only when oldPriority is unexpectedly NULL during clearing"
+  
+  # ==============================================================================
+  # Jira Configuration
+  # ==============================================================================
+  
+  JIRA_SERVER:
+    type: string
+    required: true
+    description: "Jira server URL (must be HTTPS)"
+    example: "https://company.atlassian.net"
+    validation: "Valid HTTPS URL"
+  
+  JIRA_USER:
+    type: string
+    required: true
+    description: "Jira username or email for authentication"
+    example: "dnsbl-bot@company.com"
+    validation: "Valid email or username"
+  
+  JIRA_API_TOKEN:
+    type: string
+    required: true
+    sensitive: true
+    description: "Jira API token (store in Kubernetes Secret, not ConfigMap)"
+    validation: "Non-empty string"
+    note: "Generate from Jira account settings → Security → API tokens"
+  
+  JIRA_PROJECT:
+    type: string
+    required: true
+    description: "Jira project key for creating issues"
+    example: "OPS"
+    validation: "Valid Jira project key (uppercase, alphanumeric)"
+  
+  JIRA_ISSUE_TYPE:
+    type: string
+    required: true
+    description: "Issue type name for blacklist tracking issues"
+    example: "Incident"
+    validation: "Must exist in JIRA_PROJECT's issue type scheme"
+  
+  JIRA_DNS_FAILURE_ISSUE_TYPE:
+    type: string
+    required: true
+    description: "Issue type name for DNS infrastructure failure alerts"
+    example: "Alert"
+    validation: "Must exist in JIRA_PROJECT's issue type scheme"
+    note: "Used when >50% of DNSBL zones return UNKNOWN (MAJOR MALFUNCTION)"
+  
+  JIRA_EXCLUDED_STATUSES:
+    type: string
+    required: false
+    default: "Done,Closed,Resolved"
+    description: "Comma-separated status names indicating 'closed' issues (for JQL exclusion)"
+    example: "Done,Closed,Resolved,Cancelled"
+    validation: "Valid status names in JIRA_PROJECT's workflow"
+    note: "JQL template: status NOT IN (Done,Closed,Resolved)"
+  
+  # ==============================================================================
+  # Operational Configuration
+  # ==============================================================================
+  
+  DRY_RUN:
+    type: boolean
+    required: false
+    default: false
+    description: "If true, perform all checks but skip database writes and Jira actions (log only)"
+    validation: "true or false (case-insensitive)"
+    note: "Useful for testing configuration without affecting production data"
+
+# ==============================================================================
+# Kubernetes ConfigMap Template
+# ==============================================================================
+
+configmap_template: |
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: dnsbl-config
+    namespace: postal
+  data:
+    # Database (non-sensitive)
+    DB_HOST: "postgresql.postal.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_NAME: "postal"
+    DB_USER: "dnsbl_monitor"
+    
+    # DNSBL zones (comma-separated)
+    DNSBL_ZONES: "zen.spamhaus.org,bl.spamcop.net,dnsbl.sorbs.net"
+    DNS_TIMEOUT: "5"
+    DNS_CONCURRENCY: "10"
+    
+    # Priorities
+    LISTED_PRIORITY: "0"
+    CLEAN_FALLBACK_PRIORITY: "50"
+    
+    # Jira (non-sensitive)
+    JIRA_SERVER: "https://company.atlassian.net"
+    JIRA_USER: "dnsbl-bot@company.com"
+    JIRA_PROJECT: "OPS"
+    JIRA_ISSUE_TYPE: "Incident"
+    JIRA_DNS_FAILURE_ISSUE_TYPE: "Alert"
+    JIRA_EXCLUDED_STATUSES: "Done,Closed,Resolved"
+    
+    # Operational
+    DRY_RUN: "false"
+
+# ==============================================================================
+# Kubernetes Secret Template
+# ==============================================================================
+
+secret_template: |
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: dnsbl-secrets
+    namespace: postal
+  type: Opaque
+  stringData:
+    # IMPORTANT: Replace these values before applying
+    # Encode with: echo -n "your-password" | base64
+    db-password: "CHANGEME_DB_PASSWORD"
+    jira-api-token: "CHANGEME_JIRA_TOKEN"
+
+# ==============================================================================
+# Validation Rules
+# ==============================================================================
+
+validation_rules:
+  startup_checks:
+    - "DB_HOST is resolvable via DNS"
+    - "Database connection succeeds with provided credentials"
+    - "postal.ip_addresses table exists with expected columns"
+    - "JIRA_SERVER is reachable via HTTPS"
+    - "Jira authentication succeeds with provided credentials"
+    - "JIRA_PROJECT exists and user has permission to create issues"
+    - "JIRA_ISSUE_TYPE and JIRA_DNS_FAILURE_ISSUE_TYPE exist in project"
+    - "DNSBL_ZONES contains at least one valid domain"
+    - "LISTED_PRIORITY < CLEAN_FALLBACK_PRIORITY (sanity check)"
+  
+  runtime_checks:
+    - "DNS queries timeout after DNS_TIMEOUT seconds"
+    - "Concurrent DNS queries limited to DNS_CONCURRENCY workers"
+    - "Database transactions use READ COMMITTED isolation"
+    - "Jira API retries use exponential backoff (2s, 4s, 8s)"
+
+# ==============================================================================
+# Environment Variable Precedence
+# ==============================================================================
+
+precedence:
+  note: "If DB_DSN is provided, it takes precedence over individual DB_* variables"
+  order:
+    1: "DB_DSN (if provided)"
+    2: "Individual DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD (if DB_DSN not provided)"
+
+# ==============================================================================
+# Usage Examples
+# ==============================================================================
+
+examples:
+  local_development:
+    description: "Run locally with .env file"
+    command: "uv run python src/main.py"
+    env_file: |
+      DB_HOST=localhost
+      DB_PORT=5432
+      DB_NAME=postal_dev
+      DB_USER=postgres
+      DB_PASSWORD=dev_password
+      DNSBL_ZONES=zen.spamhaus.org,bl.spamcop.net
+      JIRA_SERVER=https://company.atlassian.net
+      JIRA_USER=dev@company.com
+      JIRA_API_TOKEN=dev_token_here
+      JIRA_PROJECT=DEV
+      JIRA_ISSUE_TYPE=Task
+      JIRA_DNS_FAILURE_ISSUE_TYPE=Bug
+      DRY_RUN=true
+  
+  kubernetes_deployment:
+    description: "Deploy to Kubernetes with ConfigMap and Secret"
+    steps:
+      1: "Create Secret: kubectl create secret generic dnsbl-secrets --from-literal=db-password=xxx --from-literal=jira-api-token=yyy"
+      2: "Create ConfigMap: kubectl apply -f kubernetes/configmap.yaml"
+      3: "Deploy CronJob: kubectl apply -f kubernetes/cronjob.yaml"
+      4: "Verify: kubectl get cronjobs -n postal"
+  
+  dry_run_testing:
+    description: "Test configuration without affecting production"
+    env:
+      DRY_RUN: "true"
+    expected_behavior: "All DNS checks and logic execute, but no DB writes or Jira actions occur. Logs show 'would execute' for all actions."
