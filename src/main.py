@@ -51,6 +51,27 @@ def process_ip(
         "jira_updated": 0,
     }
 
+    # Track if recovery action was taken
+    recovery_jira_created = False
+
+    # Recovery: Create missing Jira issue for already-listed IPs (if not in DRY_RUN)
+    if not config.dry_run and jira_client and ip_record.is_currently_listed():
+        existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
+        if not existing_issue:
+            # IP is listed in DB but has no Jira issue - create it
+            listed_zones = ip_record.get_listed_zones()
+            description = (
+                f"IP {ip_record.ip} is listed on {len(listed_zones)} DNSBL zone(s):\n"
+            )
+            description += "\n".join(f"- {zone}" for zone in listed_zones)
+            description += "\n\nNote: This issue was created during recovery (IP was already listed in database)."
+            jira_client.create_issue(ip_record.ip, listed_zones, description)
+            logger.info(
+                f"Recovery: Created missing Jira issue for listed IP {ip_record.ip}"
+            )
+            stats["jira_created"] = 1
+            recovery_jira_created = True
+
     # Check IP against all DNSBL zones
     dns_results = check_ip_concurrent(
         ip_record.ip, dns_zones, dns_concurrency, dns_timeout
@@ -71,7 +92,9 @@ def process_ip(
             unknown_zones=unknown_zones,
             decision="LISTED" if ip_record.is_currently_listed() else "CLEAN",
             db_changes=False,
-            jira_action="no_action",
+            jira_action="created_issue_recovery"
+            if recovery_jira_created
+            else "no_action",
             duration_ms=int((time.time() - ip_start) * 1000),
         )
         return stats
@@ -137,10 +160,11 @@ def process_ip(
             )
             stats["listed"] = 1
 
-            # Add comment to existing Jira issue
+            # Upsert: Add comment to existing Jira issue OR create if missing
             if jira_client:
                 existing_issue = jira_client.find_open_issue_for_ip(ip_record.ip)
                 if existing_issue:
+                    # Update existing issue with zone change comment
                     comment = "Zone membership changed:\n"
                     if transition.zone_delta["added"]:
                         comment += (
@@ -156,6 +180,18 @@ def process_ip(
                     jira_client.add_comment(existing_issue["key"], comment)
                     jira_action = "updated_issue"
                     stats["jira_updated"] = 1
+                else:
+                    # Create missing issue (recovery case)
+                    description = f"IP {ip_record.ip} is listed on {len(transition.listed_zones)} DNSBL zone(s):\n"
+                    description += "\n".join(
+                        f"- {zone}" for zone in transition.listed_zones
+                    )
+                    description += "\n\nNote: This issue was created during zone change detection (missing initial issue)."
+                    jira_client.create_issue(
+                        ip_record.ip, transition.listed_zones, description
+                    )
+                    jira_action = "created_issue"
+                    stats["jira_created"] = 1
     else:
         # DRY_RUN mode - log what would happen
         logger.info(
