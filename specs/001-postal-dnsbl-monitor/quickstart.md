@@ -189,7 +189,7 @@ python main.py
 **Expected output** (see `contracts/log-format.json`):
 ```json
 {"timestamp": "2025-12-17T10:30:00Z", "level": "INFO", "message": "Starting DNSBL monitor", "job_run_id": "postal-dnsbl-abc123", "dry_run": true}
-{"timestamp": "2025-12-17T10:30:01Z", "level": "INFO", "ip": "203.0.113.5", "listed_zones": ["zen.spamhaus.org"], "unknown_zones": [], "decision": "THROTTLE", "db_changes": "priority: 0→50, oldPriority: null→0, blockingLists: ''→'zen.spamhaus.org'", "jira_action": "CREATE OPS-123: IP 203.0.113.5 listed on 1 DNSBL(s)", "duration_ms": 145}
+{"timestamp": "2025-12-17T10:30:01Z", "level": "INFO", "ip": "203.0.113.5", "listed_zones": ["zen.spamhaus.org"], "unknown_zones": [], "decision": "THROTTLE", "db_changes": "priority: 0->50, oldPriority: null->0, blockingLists: ''->'zen.spamhaus.org'", "jira_action": "CREATE OPS-123: IP 203.0.113.5 listed on 1 DNSBL(s)", "duration_ms": 145}
 {"timestamp": "2025-12-17T10:30:05Z", "level": "INFO", "message": "Job completed", "job_run_id": "postal-dnsbl-abc123", "total_ips": 42, "clean": 38, "listed": 3, "unknown": 1, "db_updates": 0, "jira_created": 0, "jira_updated": 0, "duration_ms": 4820}
 ```
 
@@ -271,7 +271,7 @@ pytest tests/e2e/test_full_workflow.py -v --log-cli-level=INFO
 3. Run application
 4. Verify DB: priority=50, oldPriority=0, blockingLists populated
 5. Verify Jira: Issue created with correct summary/description
-6. Re-run with same state → Verify idempotency (no duplicate writes)
+6. Re-run with same state -> Verify idempotency (no duplicate writes)
 
 ---
 
@@ -457,7 +457,7 @@ kubectl get jobs -n postal -l app=postal-dnsbl-monitor
 **Symptoms**: High percentage of `unknown_zones` in logs, DNS timeout errors
 
 **Solutions**:
-1. Increase `DNSBL_TIMEOUT_SECONDS` (default: 5.0 → try 10.0)
+1. Increase `DNSBL_TIMEOUT_SECONDS` (default: 5.0 -> try 10.0)
 2. Check network egress rules allow UDP/53 to DNSBL zones
 3. Verify DNS resolver configuration in cluster (`kubectl get svc -n kube-system kube-dns`)
 4. Test DNS from pod: `kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup zen.spamhaus.org`
@@ -468,7 +468,7 @@ kubectl get jobs -n postal -l app=postal-dnsbl-monitor
 
 **Solutions**:
 1. Increase `JIRA_RETRY_DELAY_SECONDS` and `JIRA_RETRY_BACKOFF_FACTOR`
-2. Reduce CronJob frequency (e.g., `*/15 * * * *` → `*/30 * * * *`)
+2. Reduce CronJob frequency (e.g., `*/15 * * * *` -> `*/30 * * * *`)
 3. Check Jira Cloud rate limits: 10 requests/second per user
 4. Use dedicated service account with higher rate limits
 
@@ -497,8 +497,8 @@ kubectl get jobs -n postal -l app=postal-dnsbl-monitor
 **Symptoms**: Pod restarts with `OOMKilled` status, memory limit exceeded
 
 **Solutions**:
-1. Increase memory limits in CronJob: `limits.memory: 512Mi → 1Gi`
-2. Reduce concurrent DNS workers: `DNSBL_MAX_WORKERS: 10 → 5`
+1. Increase memory limits in CronJob: `limits.memory: 512Mi -> 1Gi`
+2. Reduce concurrent DNS workers: `DNSBL_MAX_WORKERS: 10 -> 5`
 3. Check for memory leaks: Run locally with memory profiler (`pytest tests/performance/test_memory.py`)
 4. Verify batch processing logic (should process IPs in streaming fashion, not load all into memory)
 
@@ -507,8 +507,8 @@ kubectl get jobs -n postal -l app=postal-dnsbl-monitor
 **Symptoms**: Job self-terminates with `MAX_EXECUTION_TIME_SECONDS exceeded` error
 
 **Solutions**:
-1. Increase timeout: `MAX_EXECUTION_TIME_SECONDS: 300 → 600`
-2. Optimize DNS concurrency: `DNSBL_MAX_WORKERS: 10 → 20` (if network/CPU allows)
+1. Increase timeout: `MAX_EXECUTION_TIME_SECONDS: 300 -> 600`
+2. Optimize DNS concurrency: `DNSBL_MAX_WORKERS: 10 -> 20` (if network/CPU allows)
 3. Check database query performance: Ensure index on `postal.ip_addresses(id)` exists
 4. Profile execution: Enable `LOG_LEVEL=DEBUG` to see per-IP processing times
 

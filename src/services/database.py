@@ -106,7 +106,7 @@ class DatabaseService:
         zones: list[str],
         listed_priority: int,
     ) -> bool:
-        """Idempotent update for clean → listed transition (FR-015).
+        """Idempotent update for clean -> listed transition (FR-015).
 
         Sets oldPriority exactly once (preserves existing value).
         Only updates if blockingLists differs (idempotency).
@@ -156,7 +156,7 @@ class DatabaseService:
 
                 if updated:
                     logger.info(
-                        f"Database update: IP {ip_address} CLEAN → LISTED (priority {current_priority} → {listed_priority}, {len(zones)} zones)"
+                        f"Database update: IP {ip_address} CLEAN -> LISTED (priority {current_priority} -> {listed_priority}, {len(zones)} zones)"
                     )
 
                 return updated
@@ -168,7 +168,7 @@ class DatabaseService:
         old_priority: Optional[int],
         clean_fallback: int,
     ) -> bool:
-        """Idempotent update for listed → clean transition (FR-015).
+        """Idempotent update for listed -> clean transition (FR-015).
 
         Restores priority from oldPriority, clears oldPriority and blockingLists.
 
@@ -205,7 +205,7 @@ class DatabaseService:
                 if updated:
                     fallback_note = " (using fallback)" if old_priority is None else ""
                     logger.info(
-                        f"Database update: IP {ip_address} LISTED → CLEAN (priority restored to {restore_priority}{fallback_note})"
+                        f"Database update: IP {ip_address} LISTED -> CLEAN (priority restored to {restore_priority}{fallback_note})"
                     )
 
                 return updated
@@ -213,7 +213,7 @@ class DatabaseService:
     def update_ip_zone_change(
         self, ip_id: int, ip_address: str, zones: list[str]
     ) -> bool:
-        """Idempotent update for listed → listed (zone change) transition (FR-015).
+        """Idempotent update for listed -> listed (zone change) transition (FR-015).
 
         Updates blockingLists while preserving priority and oldPriority.
 
@@ -247,7 +247,7 @@ class DatabaseService:
 
                 if updated:
                     logger.info(
-                        f"Database update: IP {ip_address} LISTED → LISTED (zone change, now {len(zones)} zones)"
+                        f"Database update: IP {ip_address} LISTED -> LISTED (zone change, now {len(zones)} zones)"
                     )
 
                 return updated

@@ -96,7 +96,7 @@ Single-project CLI batch job structure (per plan.md):
 - [X] T029 [P] [US1] Unit test for config validation in tests/unit/test_config.py with mock environment variables, including JIRA_DNS_FAILURE_ISSUE_TYPE per FR-013a
 - [X] T030 [P] [US1] Unit test for IP reverse DNS formatting in tests/unit/test_ip_utils.py per data-model.md section 2
 - [ ] T031 [P] [US1] Unit test for DNS classification logic (LISTED/NOT_LISTED/UNKNOWN) in tests/unit/test_dns_result.py per FR-009
-- [X] T032 [P] [US1] Unit test for state transition logic (clean→listed, listed→clean) in tests/unit/test_state_transition.py per data-model.md section "State Transition Rules"
+- [X] T032 [P] [US1] Unit test for state transition logic (clean->listed, listed->clean) in tests/unit/test_state_transition.py per data-model.md section "State Transition Rules"
 
 ### Integration Tests for User Story 1
 
@@ -106,9 +106,9 @@ Single-project CLI batch job structure (per plan.md):
 ### Implementation for User Story 1
 
 - [X] T035 [US1] Implement get_all_ips() in src/services/database.py to query postal.ip_addresses table per FR-006
-- [X] T036 [US1] Implement update_ip_listed() with idempotent conditional UPDATE in src/services/database.py per FR-015 clean→listed transition
-- [X] T037 [US1] Implement update_ip_clean() with oldPriority restoration in src/services/database.py per FR-015 listed→clean transition
-- [X] T038 [US1] Implement update_ip_zone_change() for listed→listed transitions in src/services/database.py per FR-015
+- [X] T036 [US1] Implement update_ip_listed() with idempotent conditional UPDATE in src/services/database.py per FR-015 clean->listed transition
+- [X] T037 [US1] Implement update_ip_clean() with oldPriority restoration in src/services/database.py per FR-015 listed->clean transition
+- [X] T038 [US1] Implement update_ip_zone_change() for listed->listed transitions in src/services/database.py per FR-015
 - [X] T039 [US1] Implement check_dnsbl() for single IP-zone query in src/services/dns_checker.py per research.md section 1
 - [X] T040 [US1] Implement check_ip_concurrent() with ThreadPoolExecutor in src/services/dns_checker.py per FR-011
 - [X] T041 [US1] Implement find_open_issue_for_ip() with JQL search in src/services/jira_client.py per FR-021
@@ -324,11 +324,11 @@ Task T028: "Contract test for Jira deduplication in tests/contract/test_deduplic
 
 ### Incremental Delivery
 
-1. **Foundation**: Complete Setup (Phase 1) + Foundational (Phase 2) → T001-T024 complete
-2. **MVP Deployment**: Add User Story 1 (Phase 3) → T025-T049 complete → Test independently → Deploy (MVP!)
-3. **Multi-Zone Tracking**: Add User Story 2 (Phase 4) → T050-T057 complete → Test independently → Deploy
-4. **Fault Tolerance**: Add User Story 3 (Phase 5) → T058-T068 complete → Test independently → Deploy
-5. **Final Polish**: Complete Phase 7 → T079-T092 complete → Production-ready
+1. **Foundation**: Complete Setup (Phase 1) + Foundational (Phase 2) -> T001-T024 complete
+2. **MVP Deployment**: Add User Story 1 (Phase 3) -> T025-T049 complete -> Test independently -> Deploy (MVP!)
+3. **Multi-Zone Tracking**: Add User Story 2 (Phase 4) -> T050-T057 complete -> Test independently -> Deploy
+4. **Fault Tolerance**: Add User Story 3 (Phase 5) -> T058-T068 complete -> Test independently -> Deploy
+5. **Final Polish**: Complete Phase 7 -> T079-T092 complete -> Production-ready
 
 Each story adds value without breaking previous stories.
 
@@ -363,9 +363,9 @@ Stories complete and integrate independently.
 **Parallel Opportunities**: 35+ tasks marked [P] can run in parallel within their phase
 
 **Independent Test Criteria**:
-- **US1**: Insert test IP → Run job → Verify throttled + Jira ticket → Re-run → Verify idempotency (no duplicates)
-- **US2**: Simulate multi-zone listing → Verify sorted blockingLists → Change zones → Verify Jira comment (not new ticket)
-- **US3**: Simulate DNS timeouts → Verify UNKNOWN classification → Trigger >50% failure → Verify MAJOR MALFUNCTION alert
+- **US1**: Insert test IP -> Run job -> Verify throttled + Jira ticket -> Re-run -> Verify idempotency (no duplicates)
+- **US2**: Simulate multi-zone listing -> Verify sorted blockingLists -> Change zones -> Verify Jira comment (not new ticket)
+- **US3**: Simulate DNS timeouts -> Verify UNKNOWN classification -> Trigger >50% failure -> Verify MAJOR MALFUNCTION alert
 
 **Suggested MVP Scope**: Phase 1 + Phase 2 + Phase 3 (User Story 1) + Phase 6 (Deployment) = 59 tasks
 

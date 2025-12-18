@@ -95,7 +95,7 @@ def test_aggregate_dns_results_with_unknown():
 
 
 def test_determine_state_transition_clean_to_listed():
-    """Test clean → listed transition detection."""
+    """Test clean -> listed transition detection."""
     ip_record = IPRecord(
         id=1,
         ip="203.0.113.45",
@@ -132,7 +132,7 @@ def test_determine_state_transition_clean_to_listed():
 
 
 def test_determine_state_transition_listed_to_clean():
-    """Test listed → clean transition detection."""
+    """Test listed -> clean transition detection."""
     ip_record = IPRecord(
         id=1,
         ip="203.0.113.45",
@@ -162,7 +162,7 @@ def test_determine_state_transition_listed_to_clean():
 
 
 def test_determine_state_transition_zone_change():
-    """Test listed → listed (zone change) transition detection."""
+    """Test listed -> listed (zone change) transition detection."""
     ip_record = IPRecord(
         id=1,
         ip="203.0.113.45",

@@ -13,14 +13,14 @@
 
 **Attributes**:
 
-| Column | Type | Nullable | Description | Validation |
-|--------|------|----------|-------------|------------|
-| `id` | INTEGER | No | Primary key | Auto-increment |
-| `ip` | VARCHAR(15) | No | IPv4 address | Must match regex `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$` |
-| `priority` | INTEGER | No | Throttling level | 0-100 range (0 = fully throttled) |
-| `oldPriority` | INTEGER | Yes | Backup priority for restoration | NULL when clean, set once on clean→listed transition |
-| `blockingLists` | TEXT | No (empty string default) | Comma-separated sorted DNSBL zones | Format: `",".join(sorted(zones))` or `""` |
-| `lastEvent` | TEXT | Yes | Human-readable state transition description | Updated only on material changes |
+| Column          | Type        | Nullable                  | Description                                 | Validation                                            |
+| --------------- | ----------- | ------------------------- | ------------------------------------------- | ----------------------------------------------------- |
+| `id`            | INTEGER     | No                        | Primary key                                 | Auto-increment                                        |
+| `ip`            | VARCHAR(15) | No                        | IPv4 address                                | Must match regex `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`    |
+| `priority`      | INTEGER     | No                        | Throttling level                            | 0-100 range (0 = fully throttled)                     |
+| `oldPriority`   | INTEGER     | Yes                       | Backup priority for restoration             | NULL when clean, set once on clean->listed transition |
+| `blockingLists` | TEXT        | No (empty string default) | Comma-separated sorted DNSBL zones          | Format: `",".join(sorted(zones))` or `""`             |
+| `lastEvent`     | TEXT        | Yes                       | Human-readable state transition description | Updated only on material changes                      |
 
 **Invariants** (Constitutional Principle III - Data Integrity):
 
@@ -37,9 +37,9 @@
 
 3. **Material-Changes-Only lastEvent** (FR-014):
    - Updated **only** on these transitions:
-     - Clean → Listed: `"new block from list(s) <zones>"`
-     - Listed → Clean: `"block removed"`
-     - Listed → Listed (zone set changed): `"blocking list change: <zones>"`
+     - Clean -> Listed: `"new block from list(s) <zones>"`
+     - Listed -> Clean: `"block removed"`
+     - Listed -> Listed (zone set changed): `"blocking list change: <zones>"`
    - NOT updated when re-running job with unchanged state (idempotency)
 
 **State Machine**:
@@ -91,13 +91,13 @@
 
 **Attributes**:
 
-| Field | Type | Description | Values |
-|-------|------|-------------|--------|
-| `ip` | str | IPv4 address being checked | e.g., "203.0.113.45" |
-| `zone` | str | DNSBL zone domain | e.g., "zen.spamhaus.org" |
-| `classification` | Enum | Query result classification | LISTED \| NOT_LISTED \| UNKNOWN |
-| `response_data` | str | DNS response or error description | A record (e.g., "127.0.0.2") or exception type |
-| `timestamp` | datetime | When query completed | ISO 8601 format |
+| Field            | Type     | Description                       | Values                                         |
+| ---------------- | -------- | --------------------------------- | ---------------------------------------------- |
+| `ip`             | str      | IPv4 address being checked        | e.g., "203.0.113.45"                           |
+| `zone`           | str      | DNSBL zone domain                 | e.g., "zen.spamhaus.org"                       |
+| `classification` | Enum     | Query result classification       | LISTED \| NOT_LISTED \| UNKNOWN                |
+| `response_data`  | str      | DNS response or error description | A record (e.g., "127.0.0.2") or exception type |
+| `timestamp`      | datetime | When query completed              | ISO 8601 format                                |
 
 **Classification Logic** (FR-009):
 
@@ -112,7 +112,7 @@
 
 **DNS Query Construction** (FR-008):
 
-- Reverse IP octets: `203.0.113.45` → `45.113.0.203`
+- Reverse IP octets: `203.0.113.45` -> `45.113.0.203`
 - Append zone: `45.113.0.203.zen.spamhaus.org`
 - Query type: A record
 
@@ -124,24 +124,24 @@
 
 **Attributes**:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `ip` | str | IPv4 address |
-| `previous_state` | str | State before transition (CLEAN or LISTED) |
-| `new_state` | str | State after transition (CLEAN or LISTED) |
-| `zone_set_delta` | dict | Changes in zone membership (`added`, `removed`) |
-| `timestamp` | datetime | When transition occurred |
+| Field            | Type     | Description                                     |
+| ---------------- | -------- | ----------------------------------------------- |
+| `ip`             | str      | IPv4 address                                    |
+| `previous_state` | str      | State before transition (CLEAN or LISTED)       |
+| `new_state`      | str      | State after transition (CLEAN or LISTED)        |
+| `zone_set_delta` | dict     | Changes in zone membership (`added`, `removed`) |
+| `timestamp`      | datetime | When transition occurred                        |
 
 **Trigger Conditions** (Material Changes):
 
-1. **Clean → Listed**: IP becomes listed on ≥1 zone
-2. **Listed → Clean**: All zones return NOT_LISTED or UNKNOWN
-3. **Listed → Listed (zone change)**: Set of listing zones changes (added or removed zones)
+1. **Clean -> Listed**: IP becomes listed on ≥1 zone
+2. **Listed -> Clean**: All zones return NOT_LISTED or UNKNOWN
+3. **Listed -> Listed (zone change)**: Set of listing zones changes (added or removed zones)
 
 **Non-Triggers** (Idempotency):
 
-- Re-running job with same zone results → No event generated
-- UNKNOWN results (transient DNS failures) → No state change
+- Re-running job with same zone results -> No event generated
+- UNKNOWN results (transient DNS failures) -> No state change
 
 ---
 
@@ -151,13 +151,13 @@
 
 **Attributes**:
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `issue_key` | str | Jira issue identifier | "OPS-123" |
-| `summary` | str | Deterministic issue summary | "IP 203.0.113.45 blacklisted by zen.spamhaus.org" |
-| `description` | text | Detailed listing information | Zones, DNS results, UNKNOWN zones, timestamp |
-| `status` | str | Workflow status | "Open", "In Progress", "Done", etc. |
-| `labels` | list[str] | Issue labels | ["MAJOR MALFUNCTION"] for DNS failures |
+| Field         | Type      | Description                  | Example                                           |
+| ------------- | --------- | ---------------------------- | ------------------------------------------------- |
+| `issue_key`   | str       | Jira issue identifier        | "OPS-123"                                         |
+| `summary`     | str       | Deterministic issue summary  | "IP 203.0.113.45 blacklisted by zen.spamhaus.org" |
+| `description` | text      | Detailed listing information | Zones, DNS results, UNKNOWN zones, timestamp      |
+| `status`      | str       | Workflow status              | "Open", "In Progress", "Done", etc.               |
+| `labels`      | list[str] | Issue labels                 | ["MAJOR MALFUNCTION"] for DNS failures            |
 
 **Summary Format** (FR-022 - Deterministic):
 
@@ -200,12 +200,12 @@ if unknown_percentage > 50:
 
 **Attributes**:
 
-| Field | Content |
-|-------|---------|
-| Issue Type | `JIRA_DNS_FAILURE_ISSUE_TYPE` |
-| Label | "MAJOR MALFUNCTION" |
-| Summary | "DNS Infrastructure Failure Detected - {percentage}% zones unreachable" |
-| Description | Failed zone list, error types, timestamp, execution logs |
+| Field       | Content                                                                 |
+| ----------- | ----------------------------------------------------------------------- |
+| Issue Type  | `JIRA_DNS_FAILURE_ISSUE_TYPE`                                           |
+| Label       | "MAJOR MALFUNCTION"                                                     |
+| Summary     | "DNS Infrastructure Failure Detected - {percentage}% zones unreachable" |
+| Description | Failed zone list, error types, timestamp, execution logs                |
 
 **Deduplication**:
 
@@ -221,7 +221,7 @@ if unknown_percentage > 50:
 
 **Cardinality**: One-to-Zero-or-One
 
-- One IP Address Record → Zero-or-One **open** Jira Issue
+- One IP Address Record -> Zero-or-One **open** Jira Issue
 - Relationship established via JQL search (not foreign key)
 - Multiple **closed** issues may exist for same IP (historical tracking)
 
@@ -235,11 +235,11 @@ if unknown_percentage > 50:
 
 **Cardinality**: One-to-Many (transient)
 
-- One IP Address Record → Many DNS Query Results (one per DNSBL zone per job run)
+- One IP Address Record -> Many DNS Query Results (one per DNSBL zone per job run)
 - Results are **not persisted**, only aggregated for decision-making
 - Results logged in structured JSON for debugging
 
-### DNS Query Results → State Transition Event
+### DNS Query Results -> State Transition Event
 
 **Aggregation Flow**:
 
@@ -252,7 +252,7 @@ Decision: LISTED if ≥1, CLEAN if 0
     ↓
 Compare with current DB state
     ↓
-If changed → Generate State Transition Event
+If changed -> Generate State Transition Event
     ↓
 Update DB + Create/Update Jira Issue
 ```
@@ -263,13 +263,13 @@ Update DB + Create/Update Jira Issue
 
 **Source**: Environment variables (ConfigMap/Secret)
 
-| Category | Variables | Type | Default |
-|----------|-----------|------|---------|
-| **Database** | DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, DB_DSN | str, int | N/A (required) |
-| **DNSBL** | DNSBL_ZONES (comma-separated), DNS_TIMEOUT, DNS_CONCURRENCY | str, int | 5s, 10 |
-| **Priorities** | LISTED_PRIORITY, CLEAN_FALLBACK_PRIORITY | int | 0, 50 |
-| **Jira** | JIRA_SERVER, JIRA_USER, JIRA_API_TOKEN, JIRA_PROJECT, JIRA_ISSUE_TYPE, JIRA_DNS_FAILURE_ISSUE_TYPE, JIRA_EXCLUDED_STATUSES | str | "Done,Closed,Resolved" |
-| **Operational** | DRY_RUN | bool | false |
+| Category        | Variables                                                                                                                  | Type     | Default                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
+| **Database**    | DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, DB_DSN                                                                    | str, int | N/A (required)         |
+| **DNSBL**       | DNSBL_ZONES (comma-separated), DNS_TIMEOUT, DNS_CONCURRENCY                                                                | str, int | 5s, 10                 |
+| **Priorities**  | LISTED_PRIORITY, CLEAN_FALLBACK_PRIORITY                                                                                   | int      | 0, 50                  |
+| **Jira**        | JIRA_SERVER, JIRA_USER, JIRA_API_TOKEN, JIRA_PROJECT, JIRA_ISSUE_TYPE, JIRA_DNS_FAILURE_ISSUE_TYPE, JIRA_EXCLUDED_STATUSES | str      | "Done,Closed,Resolved" |
+| **Operational** | DRY_RUN                                                                                                                    | bool     | false                  |
 
 **Validation Requirements**:
 
@@ -319,7 +319,7 @@ Update DB + Create/Update Jira Issue
 
 ## State Transition Rules (Detailed)
 
-### Transition 1: Clean → Listed
+### Transition 1: Clean -> Listed
 
 **Preconditions**:
 - Current state: `blockingLists == ""`
@@ -342,7 +342,7 @@ SET lastEvent = f"new block from list(s) {blockingLists}"
 
 ---
 
-### Transition 2: Listed → Listed (Zone Change)
+### Transition 2: Listed -> Listed (Zone Change)
 
 **Preconditions**:
 - Current state: `blockingLists != ""`
@@ -365,7 +365,7 @@ SET lastEvent = f"blocking list change: {blockingLists}"
 
 ---
 
-### Transition 3: Listed → Clean
+### Transition 3: Listed -> Clean
 
 **Preconditions**:
 - Current state: `blockingLists != ""`
@@ -389,7 +389,7 @@ SET lastEvent = "block removed"
 
 ---
 
-### No Transition: Clean → Clean (No-Op)
+### No Transition: Clean -> Clean (No-Op)
 
 **Preconditions**:
 - Current state: `blockingLists == ""`
@@ -403,7 +403,7 @@ SET lastEvent = "block removed"
 
 ---
 
-### No Transition: Listed → Listed (Same Zones)
+### No Transition: Listed -> Listed (Same Zones)
 
 **Preconditions**:
 - Current state: `blockingLists == "zone1,zone2"`
@@ -422,9 +422,9 @@ SET lastEvent = "block removed"
 **Constitutional Compliance Tests** (required by constitution):
 
 1. **Test oldPriority Single-Write** (Principle III):
-   - Assert oldPriority set on first clean→listed transition
-   - Assert oldPriority preserved on listed→listed (zone change)
-   - Assert oldPriority cleared on listed→clean transition
+   - Assert oldPriority set on first clean->listed transition
+   - Assert oldPriority preserved on listed->listed (zone change)
+   - Assert oldPriority cleared on listed->clean transition
 
 2. **Test blockingLists Deterministic Sorting** (Principle III):
    - Insert unsorted zones: `["zen.spamhaus.org", "bl.spamcop.net"]`

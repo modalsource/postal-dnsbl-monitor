@@ -31,10 +31,10 @@ Given that feature description, do this:
    - Preserve technical terms and acronyms (OAuth2, API, JWT, etc.)
    - Keep it concise but descriptive enough to understand the feature at a glance
    - Examples:
-     - "I want to add user authentication" → "user-auth"
-     - "Implement OAuth2 integration for the API" → "oauth2-api-integration"
-     - "Create a dashboard for analytics" → "analytics-dashboard"
-     - "Fix payment processing timeout bug" → "fix-payment-timeout"
+     - "I want to add user authentication" -> "user-auth"
+     - "Implement OAuth2 integration for the API" -> "oauth2-api-integration"
+     - "Create a dashboard for analytics" -> "analytics-dashboard"
+     - "Fix payment processing timeout bug" -> "fix-payment-timeout"
 
 2. **Check for existing branches before creating new one**:
 
@@ -167,12 +167,12 @@ Given that feature description, do this:
            
            **Suggested Answers**:
            
-           | Option | Answer | Implications |
-           |--------|--------|--------------|
-           | A      | [First suggested answer] | [What this means for the feature] |
-           | B      | [Second suggested answer] | [What this means for the feature] |
-           | C      | [Third suggested answer] | [What this means for the feature] |
-           | Custom | Provide your own answer | [Explain how to provide custom input] |
+           | Option | Answer                    | Implications                          |
+           | ------ | ------------------------- | ------------------------------------- |
+           | A      | [First suggested answer]  | [What this means for the feature]     |
+           | B      | [Second suggested answer] | [What this means for the feature]     |
+           | C      | [Third suggested answer]  | [What this means for the feature]     |
+           | Custom | Provide your own answer   | [Explain how to provide custom input] |
            
            **Your choice**: _[Wait for user response]_
            ```

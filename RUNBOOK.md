@@ -118,11 +118,11 @@ Vedrai log JSON strutturati simili a:
 
 ### Interpretazione dei Risultati
 
-- **decision: CLEAN** → IP non è in nessuna blacklist
-- **decision: LISTED** → IP trovato in almeno una blacklist
-- **listed_zones** → Lista delle blacklist dove l'IP è presente
-- **unknown_zones** → Zone che non hanno risposto (timeout/errore DNS)
-- **jira_action: no_action** → In DRY_RUN, nessuna azione Jira viene eseguita
+- **decision: CLEAN** -> IP non è in nessuna blacklist
+- **decision: LISTED** -> IP trovato in almeno una blacklist
+- **listed_zones** -> Lista delle blacklist dove l'IP è presente
+- **unknown_zones** -> Zone che non hanno risposto (timeout/errore DNS)
+- **jira_action: no_action** -> In DRY_RUN, nessuna azione Jira viene eseguita
 
 ---
 

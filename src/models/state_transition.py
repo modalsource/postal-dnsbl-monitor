@@ -62,9 +62,9 @@ def determine_state_transition(
     """Determine if state transition is required based on DNS results.
 
     Implements state machine from data-model.md:
-    - Clean → Listed: IP becomes listed on ≥1 zone
-    - Listed → Clean: All zones return NOT_LISTED or UNKNOWN
-    - Listed → Listed (zone change): Set of listing zones changes
+    - Clean -> Listed: IP becomes listed on ≥1 zone
+    - Listed -> Clean: All zones return NOT_LISTED or UNKNOWN
+    - Listed -> Listed (zone change): Set of listing zones changes
 
     Args:
         ip_record: Current IP record from database.

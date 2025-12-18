@@ -10,11 +10,11 @@
 
 ### Session 2025-12-17
 
-- Q: What are the specific retry parameters for Jira API transient failures? → A: 3 retries with exponential backoff (2s, 4s, 8s intervals)
-- Q: Which alerting mechanism should be used for widespread DNS failures? → A: Create Jira issue with DNS failure issue type when >50% of zones fail (labeled "MAJOR MALFUNCTION" with detailed explanation and logs)
-- Q: What specific MySQL transaction isolation level should be used? → A: READ COMMITTED (MySQL default)
-- Q: What are the recommended Kubernetes resource requests and limits? → A: Requests: 250m CPU / 256Mi memory, Limits: 500m CPU / 512Mi memory
-- Q: Should the entire JQL query template be configurable or just specific parts? → A: Configurable project and status, fixed summary pattern
+- Q: What are the specific retry parameters for Jira API transient failures? -> A: 3 retries with exponential backoff (2s, 4s, 8s intervals)
+- Q: Which alerting mechanism should be used for widespread DNS failures? -> A: Create Jira issue with DNS failure issue type when >50% of zones fail (labeled "MAJOR MALFUNCTION" with detailed explanation and logs)
+- Q: What specific MySQL transaction isolation level should be used? -> A: READ COMMITTED (MySQL default)
+- Q: What are the recommended Kubernetes resource requests and limits? -> A: Requests: 250m CPU / 256Mi memory, Limits: 500m CPU / 512Mi memory
+- Q: Should the entire JQL query template be configurable or just specific parts? -> A: Configurable project and status, fixed summary pattern
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -147,9 +147,9 @@ When DNS queries to DNSBL providers fail due to network issues, timeouts, or pro
   - All updates MUST be idempotent: re-running without state changes produces no writes
 
 - **FR-015**: System MUST implement these state transition rules:
-  - **Clean → Listed**: Set `priority = LISTED_PRIORITY`, set `oldPriority = <current priority>` (one-time write), set `blockingLists = <sorted zones>`, set `lastEvent = "new block from list(s) <zones>"`
-  - **Listed → Clean**: Set `priority = oldPriority` (or CLEAN_FALLBACK_PRIORITY if oldPriority is NULL), set `oldPriority = NULL`, set `blockingLists = ""`, set `lastEvent = "block removed"`
-  - **Listed → Listed (zone set changed)**: Update `blockingLists = <new sorted zones>`, update `lastEvent = "blocking list change: <zones>"`
+  - **Clean -> Listed**: Set `priority = LISTED_PRIORITY`, set `oldPriority = <current priority>` (one-time write), set `blockingLists = <sorted zones>`, set `lastEvent = "new block from list(s) <zones>"`
+  - **Listed -> Clean**: Set `priority = oldPriority` (or CLEAN_FALLBACK_PRIORITY if oldPriority is NULL), set `oldPriority = NULL`, set `blockingLists = ""`, set `lastEvent = "block removed"`
+  - **Listed -> Listed (zone set changed)**: Update `blockingLists = <new sorted zones>`, update `lastEvent = "blocking list change: <zones>"`
   - **No change**: No database writes
 
 - **FR-016**: System MUST use LISTED_PRIORITY, CLEAN_FALLBACK_PRIORITY, and other priority values from configuration (environment variables), not hardcoded values.

@@ -2,7 +2,7 @@
 Sync Impact Report - Constitution Update
 =========================================
 
-Version Change: 1.1.0 → 1.2.0
+Version Change: 1.1.0 -> 1.2.0
 Type: MINOR (Specified PostgreSQL as database requirement)
 
 Modified Principles:

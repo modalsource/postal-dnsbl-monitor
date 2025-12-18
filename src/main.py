@@ -106,7 +106,7 @@ def process_ip(
     if not config.dry_run:
         # Execute database update based on transition type
         if transition.previous_state == "CLEAN" and transition.new_state == "LISTED":
-            # Clean → Listed
+            # Clean -> Listed
             db_updated = db_service.update_ip_listed(
                 ip_record.id,
                 ip_record.ip,
@@ -131,7 +131,7 @@ def process_ip(
                     stats["jira_created"] = 1
 
         elif transition.previous_state == "LISTED" and transition.new_state == "CLEAN":
-            # Listed → Clean
+            # Listed -> Clean
             db_updated = db_service.update_ip_clean(
                 ip_record.id,
                 ip_record.ip,
@@ -154,7 +154,7 @@ def process_ip(
                     stats["jira_updated"] = 1
 
         elif transition.previous_state == "LISTED" and transition.new_state == "LISTED":
-            # Listed → Listed (zone change)
+            # Listed -> Listed (zone change)
             db_updated = db_service.update_ip_zone_change(
                 ip_record.id, ip_record.ip, transition.listed_zones
             )
@@ -195,7 +195,7 @@ def process_ip(
     else:
         # DRY_RUN mode - log what would happen
         logger.info(
-            f"DRY_RUN: Would update IP {ip_record.ip}: {transition.previous_state} → {transition.new_state}"
+            f"DRY_RUN: Would update IP {ip_record.ip}: {transition.previous_state} -> {transition.new_state}"
         )
 
     unknown_zones = [r.zone for r in dns_results if r.is_unknown()]

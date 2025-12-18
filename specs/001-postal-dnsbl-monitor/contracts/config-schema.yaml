@@ -124,7 +124,7 @@ environment_variables:
     sensitive: true
     description: "Jira API token (store in Kubernetes Secret, not ConfigMap)"
     validation: "Non-empty string"
-    note: "Generate from Jira account settings → Security → API tokens"
+    note: "Generate from Jira account settings -> Security -> API tokens"
   
   JIRA_PROJECT:
     type: string

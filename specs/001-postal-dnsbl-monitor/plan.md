@@ -55,7 +55,7 @@ The Postal DNSBL Monitor is a stateless, containerized Python 3.14 application t
 - 📋 **DELIVERABLE REQUIRED**: Dockerfile, kubernetes/cronjob.yaml, kubernetes/configmap-template.yaml
 
 ### Principle III: Data Integrity & Determinism
-- ✅ **PASS**: FR-014 enforces `oldPriority` single-write invariant (exactly once on clean→listed transition)
+- ✅ **PASS**: FR-014 enforces `oldPriority` single-write invariant (exactly once on clean->listed transition)
 - ✅ **PASS**: FR-014 enforces `blockingLists` deterministic sorting: `",".join(sorted(zone_list))`
 - ✅ **PASS**: FR-014 enforces `lastEvent` material-changes-only (new listing, clearing, zone-set change)
 - ✅ **PASS**: FR-032 requires idempotent updates (re-run without state changes = zero DB writes)
@@ -87,7 +87,7 @@ The Postal DNSBL Monitor is a stateless, containerized Python 3.14 application t
 
 ### Principle VIII: Observability
 - ✅ **PASS**: FR-028 emits structured JSON logs per IP (ip, listed_zones, unknown_zones, decision, db_changes, jira_action, duration_ms, timestamp)
-- ✅ **PASS**: FR-030 distinguishes fatal (DB/Jira unreachable → exit non-zero) vs non-fatal (DNS UNKNOWN → log and continue)
+- ✅ **PASS**: FR-030 distinguishes fatal (DB/Jira unreachable -> exit non-zero) vs non-fatal (DNS UNKNOWN -> log and continue)
 - ✅ **PASS**: FR-031 logs job summary (total IPs, listed, cleaned, unchanged, Jira actions, DNS failures, duration)
 
 **Constitution Compliance**: ✅ **ALL GATES PASS** - No violations requiring justification
@@ -185,7 +185,7 @@ README.md                     # Project overview, quickstart reference
    - **Research Areas**:
      - dnspython async vs threading for concurrent queries
      - Exception handling for NXDOMAIN, SERVFAIL, timeout
-     - Reverse DNS formatting for DNSBL queries (e.g., 203.0.113.45 → 45.113.0.203.zen.spamhaus.org)
+     - Reverse DNS formatting for DNSBL queries (e.g., 203.0.113.45 -> 45.113.0.203.zen.spamhaus.org)
      - Performance optimization for 1000 IPs × 10 zones within 5 minutes
 
 2. **Jira API Client Best Practices**
@@ -258,9 +258,9 @@ README.md                     # Project overview, quickstart reference
      - `blockingLists` format: `",".join(sorted(zones))` or empty string
      - `oldPriority` is NULL when `priority != LISTED_PRIORITY`
    - State Transitions:
-     - Clean → Listed: `priority=LISTED_PRIORITY, oldPriority=<old priority>, blockingLists=<sorted zones>, lastEvent="new block from list(s) <zones>"`
-     - Listed → Clean: `priority=oldPriority or CLEAN_FALLBACK_PRIORITY, oldPriority=NULL, blockingLists="", lastEvent="block removed"`
-     - Listed → Listed (zone change): `blockingLists=<new sorted zones>, lastEvent="blocking list change: <zones>"`
+     - Clean -> Listed: `priority=LISTED_PRIORITY, oldPriority=<old priority>, blockingLists=<sorted zones>, lastEvent="new block from list(s) <zones>"`
+     - Listed -> Clean: `priority=oldPriority or CLEAN_FALLBACK_PRIORITY, oldPriority=NULL, blockingLists="", lastEvent="block removed"`
+     - Listed -> Listed (zone change): `blockingLists=<new sorted zones>, lastEvent="blocking list change: <zones>"`
 
 2. **DNS Query Result** (transient, not persisted)
    - Fields: `ip` (string), `zone` (string), `classification` (enum: LISTED/NOT_LISTED/UNKNOWN), `response_data` (optional A record or error), `timestamp` (datetime)
@@ -279,8 +279,8 @@ README.md                     # Project overview, quickstart reference
    - Deduplication: JQL search `project = "{JIRA_PROJECT}" AND status NOT IN ({JIRA_EXCLUDED_STATUSES}) AND summary ~ "IP {ip}"`
 
 **Relationships**:
-- One IP Address Record → Zero-or-One Open Jira Issue (via JQL search)
-- One IP Address Record → Many DNS Query Results (one per DNSBL zone, per job run)
+- One IP Address Record -> Zero-or-One Open Jira Issue (via JQL search)
+- One IP Address Record -> Many DNS Query Results (one per DNSBL zone, per job run)
 
 ### 2. API Contracts (`contracts/` directory)
 

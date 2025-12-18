@@ -10,13 +10,13 @@ import pytest
 
 
 def test_old_priority_single_write_invariant():
-    """Verify FR-014: oldPriority written exactly once on clean→listed transition.
+    """Verify FR-014: oldPriority written exactly once on clean->listed transition.
 
     Test Steps:
     1. Insert clean IP with priority=50
-    2. First update: clean → listed (should set oldPriority=50)
+    2. First update: clean -> listed (should set oldPriority=50)
     3. Verify oldPriority=50
-    4. Second update: listed → listed with different zones (should preserve oldPriority)
+    4. Second update: listed -> listed with different zones (should preserve oldPriority)
     5. Verify oldPriority still=50 (NOT overwritten)
     """
     pytest.skip("Requires database integration - to be implemented in T033")

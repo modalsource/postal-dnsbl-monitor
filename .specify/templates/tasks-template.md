@@ -167,7 +167,7 @@ Examples of foundational tasks (adjust based on your project):
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Stories (Phase 3+)**: All depend on Foundational phase completion
   - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3)
+  - Or sequentially in priority order (P1 -> P2 -> P3)
 - **Polish (Final Phase)**: Depends on all desired user stories being complete
 
 ### User Story Dependencies
@@ -221,10 +221,10 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 
 ### Incremental Delivery
 
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
-3. Add User Story 2 → Test independently → Deploy/Demo
-4. Add User Story 3 → Test independently → Deploy/Demo
+1. Complete Setup + Foundational -> Foundation ready
+2. Add User Story 1 -> Test independently -> Deploy/Demo (MVP!)
+3. Add User Story 2 -> Test independently -> Deploy/Demo
+4. Add User Story 3 -> Test independently -> Deploy/Demo
 5. Each story adds value without breaking previous stories
 
 ### Parallel Team Strategy

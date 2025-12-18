@@ -23,11 +23,11 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Create a status table:
 
      ```text
-     | Checklist | Total | Completed | Incomplete | Status |
-     |-----------|-------|-----------|------------|--------|
-     | ux.md     | 12    | 12        | 0          | ✓ PASS |
-     | test.md   | 8     | 5         | 3          | ✗ FAIL |
-     | security.md | 6   | 6         | 0          | ✓ PASS |
+     | Checklist   | Total | Completed | Incomplete | Status |
+     | ----------- | ----- | --------- | ---------- | ------ |
+     | ux.md       | 12    | 12        | 0          | ✓ PASS |
+     | test.md     | 8     | 5         | 3          | ✗ FAIL |
+     | security.md | 6     | 6         | 0          | ✓ PASS |
      ```
 
    - Calculate overall status:
@@ -63,13 +63,13 @@ You **MUST** consider the user input before proceeding (if not empty).
      git rev-parse --git-dir 2>/dev/null
      ```
 
-   - Check if Dockerfile* exists or Docker in plan.md → create/verify .dockerignore
-   - Check if .eslintrc* exists → create/verify .eslintignore
-   - Check if eslint.config.* exists → ensure the config's `ignores` entries cover required patterns
-   - Check if .prettierrc* exists → create/verify .prettierignore
-   - Check if .npmrc or package.json exists → create/verify .npmignore (if publishing)
-   - Check if terraform files (*.tf) exist → create/verify .terraformignore
-   - Check if .helmignore needed (helm charts present) → create/verify .helmignore
+   - Check if Dockerfile* exists or Docker in plan.md -> create/verify .dockerignore
+   - Check if .eslintrc* exists -> create/verify .eslintignore
+   - Check if eslint.config.* exists -> ensure the config's `ignores` entries cover required patterns
+   - Check if .prettierrc* exists -> create/verify .prettierignore
+   - Check if .npmrc or package.json exists -> create/verify .npmignore (if publishing)
+   - Check if terraform files (*.tf) exist -> create/verify .terraformignore
+   - Check if .helmignore needed (helm charts present) -> create/verify .helmignore
 
    **If ignore file already exists**: Verify it contains essential patterns, append missing critical patterns only
    **If ignore file missing**: Create with full pattern set for detected technology

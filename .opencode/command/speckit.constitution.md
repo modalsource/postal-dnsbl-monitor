@@ -48,8 +48,8 @@ Follow this execution flow:
    - Read any runtime guidance docs (e.g., `README.md`, `docs/quickstart.md`, or agent-specific guidance files if present). Update references to principles changed.
 
 5. Produce a Sync Impact Report (prepend as an HTML comment at top of the constitution file after update):
-   - Version change: old → new
-   - List of modified principles (old title → new title if renamed)
+   - Version change: old -> new
+   - List of modified principles (old title -> new title if renamed)
    - Added sections
    - Removed sections
    - Templates requiring updates (✅ updated / ⚠ pending) with file paths
@@ -59,7 +59,7 @@ Follow this execution flow:
    - No remaining unexplained bracket tokens.
    - Version line matches report.
    - Dates ISO format YYYY-MM-DD.
-   - Principles are declarative, testable, and free of vague language ("should" → replace with MUST/SHOULD rationale where appropriate).
+   - Principles are declarative, testable, and free of vague language ("should" -> replace with MUST/SHOULD rationale where appropriate).
 
 7. Write the completed constitution back to `.specify/memory/constitution.md` (overwrite).
 

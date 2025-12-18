@@ -288,7 +288,7 @@ class DatabaseService:
     def update_ip_listed(self, ip_id: int, current_priority: int, 
                          zones: List[str], listed_priority: int) -> bool:
         """
-        Idempotent update for clean → listed transition.
+        Idempotent update for clean -> listed transition.
         
         Returns: True if update occurred, False if no-op (already in this state)
         """
@@ -316,7 +316,7 @@ class DatabaseService:
     def update_ip_clean(self, ip_id: int, old_priority: Optional[int], 
                         clean_fallback: int) -> bool:
         """
-        Idempotent update for listed → clean transition.
+        Idempotent update for listed -> clean transition.
         
         Returns: True if update occurred, False if no-op
         """
@@ -747,7 +747,7 @@ from src.services.database import DatabaseService
 
 def test_old_priority_single_write_invariant(db_connection):
     """
-    Verify FR-014: oldPriority written exactly once on clean→listed transition.
+    Verify FR-014: oldPriority written exactly once on clean->listed transition.
     """
     db = DatabaseService(db_connection)
     
@@ -761,7 +761,7 @@ def test_old_priority_single_write_invariant(db_connection):
         ip_id = cur.fetchone()[0]
     db_connection.commit()
     
-    # First update: clean → listed (should set oldPriority=50)
+    # First update: clean -> listed (should set oldPriority=50)
     db.update_ip_listed(ip_id, current_priority=50, zones=["zen.spamhaus.org"], listed_priority=0)
     
     with db_connection.cursor() as cur:
@@ -771,7 +771,7 @@ def test_old_priority_single_write_invariant(db_connection):
     assert priority == 0, "Priority should be LISTED_PRIORITY"
     assert old_priority == 50, "oldPriority should be set to previous priority"
     
-    # Second update: listed → listed with different zones (should NOT change oldPriority)
+    # Second update: listed -> listed with different zones (should NOT change oldPriority)
     db.update_ip_listed(ip_id, current_priority=0, zones=["bl.spamcop.net"], listed_priority=0)
     
     with db_connection.cursor() as cur:
@@ -840,15 +840,15 @@ def test_idempotent_updates(db_connection):
 
 ## Summary of Decisions
 
-| Area | Decision | Key Benefit |
-|------|----------|-------------|
-| **DNS** | dnspython + ThreadPoolExecutor | Constitutional compliance, 10k queries < 5min |
-| **Jira** | jira-python + custom exponential backoff | Precise 2s/4s/8s retry, JQL flexibility |
-| **Database** | mysql-connector-python + READ COMMITTED + context managers | Idempotent updates, "last committed wins" |
-| **Logging** | python-json-logger | Kubernetes-native JSON, minimal overhead |
-| **Deployment** | CronJob + ConfigMap/Secret | GitOps-friendly, resource limits enforced |
-| **Docker** | Multi-stage + uv sync --frozen | Small image (~200MB), reproducible builds |
-| **Testing** | pytest + testcontainers + responses | Real DB semantics, fast unit tests, contract verification |
+| Area           | Decision                                                   | Key Benefit                                               |
+| -------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
+| **DNS**        | dnspython + ThreadPoolExecutor                             | Constitutional compliance, 10k queries < 5min             |
+| **Jira**       | jira-python + custom exponential backoff                   | Precise 2s/4s/8s retry, JQL flexibility                   |
+| **Database**   | mysql-connector-python + READ COMMITTED + context managers | Idempotent updates, "last committed wins"                 |
+| **Logging**    | python-json-logger                                         | Kubernetes-native JSON, minimal overhead                  |
+| **Deployment** | CronJob + ConfigMap/Secret                                 | GitOps-friendly, resource limits enforced                 |
+| **Docker**     | Multi-stage + uv sync --frozen                             | Small image (~200MB), reproducible builds                 |
+| **Testing**    | pytest + testcontainers + responses                        | Real DB semantics, fast unit tests, contract verification |
 
 ---
 
