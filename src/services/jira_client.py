@@ -189,3 +189,101 @@ class JiraClient:
         except JIRAError as e:
             logger.error(f"Failed to create DNS failure issue: {e}")
             raise
+
+    @exponential_backoff_retry()
+    def find_run_report_issue(self) -> Optional[dict]:
+        """Search for open 'Run Report' issue.
+
+        Returns:
+            Optional[dict]: Issue dict if found, None otherwise.
+        """
+        status_list = ",".join(f'"{s}"' for s in self.excluded_statuses)
+        jql = f'project = "{self.project}" AND status NOT IN ({status_list}) AND summary ~ "Run Report"'
+
+        try:
+            issues = self.jira.search_issues(jql, maxResults=10)
+        except JIRAError as e:
+            logger.error(f"JQL search failed for Run Report: {e}")
+            raise
+
+        if not issues:
+            return None
+
+        if len(issues) > 1:
+            logger.warning("Multiple open Run Report issues, using most recent")
+            issues = sorted(issues, key=lambda i: i.fields.created, reverse=True)
+
+        issue = issues[0]
+        return {
+            "key": issue.key,
+            "summary": issue.fields.summary,
+            "status": issue.fields.status.name,
+        }
+
+    @exponential_backoff_retry()
+    def create_or_update_run_report(
+        self, json_report: str, yaml_report: str | None, execution_timestamp: str
+    ) -> str:
+        """Create or update Run Report issue with health diagnostics.
+
+        If an open 'Run Report' issue exists, adds a comment with the new report.
+        Otherwise, creates a new issue.
+
+        Args:
+            json_report: JSON health summary report.
+            yaml_report: YAML pruned configuration (None if no broken DNSBLs).
+            execution_timestamp: ISO 8601 timestamp of execution.
+
+        Returns:
+            str: Issue key (created or updated).
+        """
+        # Build report content
+        report_content = f"*Execution completed at:* {execution_timestamp}\n\n"
+        report_content += "h3. DNSBL Health Summary\n\n"
+        report_content += "{code:json}\n"
+        report_content += json_report
+        report_content += "\n{code}\n\n"
+
+        if yaml_report:
+            report_content += "h3. Suggested DNSBL Configuration (Pruned)\n\n"
+            report_content += "{code:yaml}\n"
+            report_content += yaml_report
+            report_content += "\n{code}\n\n"
+            report_content += "⚠️ *Action Required:* Review the pruned configuration above and update DNSBL_ZONES environment variable if broken endpoints should be removed.\n"
+        else:
+            report_content += (
+                "✅ *All DNSBLs healthy* - No configuration changes needed.\n"
+            )
+
+        # Check if Run Report issue already exists
+        existing_issue = self.find_run_report_issue()
+
+        if existing_issue:
+            # Update existing issue with comment
+            issue_key = existing_issue["key"]
+            logger.info(f"Updating existing Run Report issue {issue_key}")
+            self.add_comment(issue_key, report_content)
+            return issue_key
+        else:
+            # Create new Run Report issue
+            summary = "Run Report"
+            description = (
+                "This issue tracks DNSBL health monitoring diagnostics and configuration recommendations.\n\n"
+                "Each execution appends a new report as a comment.\n\n" + report_content
+            )
+
+            issue_dict = {
+                "project": {"key": self.project},
+                "summary": summary,
+                "description": description,
+                "issuetype": {"name": self.issue_type},
+                "labels": ["run-report", "dnsbl-health"],
+            }
+
+            try:
+                new_issue = self.jira.create_issue(fields=issue_dict)
+                logger.info(f"Created new Run Report issue {new_issue.key}")
+                return new_issue.key
+            except JIRAError as e:
+                logger.error(f"Failed to create Run Report issue: {e}")
+                raise

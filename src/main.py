@@ -14,6 +14,9 @@ from src.services.logger import (
     log_job_summary,
     log_ip_check,
 )
+from src.services.health_tracker import HealthTracker
+from src.services.health_reporter import HealthReporter
+from src.utils.network_check import NetworkChecker
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +30,7 @@ def process_ip(
     db_service: DatabaseService,
     jira_client: JiraClient | None,
     config: Config,
+    health_tracker: HealthTracker | None = None,
 ) -> dict:
     """Process a single IP address.
 
@@ -38,6 +42,7 @@ def process_ip(
         db_service: Database service instance.
         jira_client: Jira client instance.
         config: Application configuration.
+        health_tracker: Optional HealthTracker instance for health reporting.
 
     Returns:
         dict: Processing statistics (listed, cleaned, unchanged, jira_created, jira_updated).
@@ -73,8 +78,11 @@ def process_ip(
             recovery_jira_created = True
 
     # Check IP against all DNSBL zones
+    if health_tracker:
+        health_tracker.record_ip_check_start()
+
     dns_results = check_ip_concurrent(
-        ip_record.ip, dns_zones, dns_concurrency, dns_timeout
+        ip_record.ip, dns_zones, dns_concurrency, dns_timeout, health_tracker
     )
 
     # Determine if state transition is needed
@@ -257,6 +265,9 @@ def main() -> int:
         ip_records = db_service.get_all_ips()
         logger.info(f"Loaded {len(ip_records)} IP addresses from database")
 
+        # Initialize health tracker (FR-003 - DNSBL Health Reporting)
+        health_tracker = HealthTracker(dnsbl_zones=config.dnsbl_zones)
+
         # Process each IP (FR-001: stateless execution)
         total_stats = {
             "listed": 0,
@@ -276,11 +287,56 @@ def main() -> int:
                 db_service=db_service,
                 jira_client=jira_client,
                 config=config,
+                health_tracker=health_tracker,
             )
 
             # Aggregate statistics
             for key in total_stats:
                 total_stats[key] += stats.get(key, 0)
+
+        # Generate DNSBL health report (FR-003)
+        network_connectivity = None
+        if config.enable_network_connectivity_check:
+            logger.info("Running supplemental network connectivity checks...")
+            network_connectivity = NetworkChecker.check_connectivity(timeout=5)
+
+        health_summary = health_tracker.get_summary(network_connectivity)
+
+        # Generate and log JSON health report
+        json_report = HealthReporter.generate_json_report(health_summary)
+        logger.info(f"DNSBL Health Summary:\n{json_report}")
+
+        # Generate and log YAML pruned configuration (US2 - if any DNSBLs are broken)
+        yaml_report = None
+        if health_summary.broken_dnsbls > 0:
+            yaml_report = HealthReporter.generate_pruned_yaml(
+                health_summary.dnsbl_health
+            )
+            logger.info(f"Suggested Pruned DNSBL Configuration:\n{yaml_report}")
+
+        # Log warning if network issue detected
+        if health_summary.network_issue_detected:
+            logger.warning(
+                "Network connectivity issue detected! "
+                f"{health_summary.broken_dnsbls}/{health_summary.total_dnsbls} DNSBLs failed "
+                "AND supplemental DNS checks to Cloudflare/Google also failed. "
+                "This may indicate a network-wide DNS outage rather than DNSBL-specific issues."
+            )
+
+        # Create or update Jira Run Report if VERBOSE mode enabled
+        if config.verbose and jira_client:
+            logger.info("VERBOSE mode enabled - creating/updating Jira Run Report...")
+            try:
+                issue_key = jira_client.create_or_update_run_report(
+                    json_report=json_report,
+                    yaml_report=yaml_report,
+                    execution_timestamp=health_summary.timestamp.isoformat(),
+                )
+                logger.info(f"Run Report issue: {issue_key}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to create/update Run Report issue: {e}", exc_info=True
+                )
 
         # Check for DNS infrastructure failure (FR-013a)
         # TODO: Implement DNS failure detection in Phase 5 (User Story 3)
