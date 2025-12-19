@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://postal-dnsbl-monitor/schemas/health-summary.json",
+  "title": "DNSBL Health Summary",
+  "description": "JSON schema for DNSBL health tracking output per FR-003",
+  "type": "object",
+  "required": ["execution_summary", "dnsbl_health", "network_connectivity"],
+  "properties": {
+    "execution_summary": {
+      "type": "object",
+      "description": "High-level execution metadata and statistics",
+      "required": [
+        "timestamp",
+        "total_dnsbls",
+        "broken_dnsbls",
+        "network_issue_detected",
+        "total_ip_checks",
+        "execution_duration_ms"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Execution end timestamp in ISO 8601 format"
+        },
+        "total_dnsbls": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total number of configured DNSBL zones"
+        },
+        "broken_dnsbls": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of DNSBLs with 100% failure rate"
+        },
+        "network_issue_detected": {
+          "type": "boolean",
+          "description": "True if >=50% DNSBLs failed AND supplemental DNS checks failed"
+        },
+        "total_ip_checks": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of IP addresses checked across all DNSBLs"
+        },
+        "execution_duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Execution time from first check to summary generation (milliseconds)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dnsbl_health": {
+      "type": "array",
+      "description": "Per-DNSBL health records",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "zone",
+          "status",
+          "checks_performed",
+          "successful_checks",
+          "failed_checks",
+          "failure_rate",
+          "failure_types"
+        ],
+        "properties": {
+          "zone": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9.-]+$",
+            "description": "DNSBL zone name (e.g., 'zen.spamhaus.org')"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "broken"],
+            "description": "healthy if failure_rate < 1.0, broken if failure_rate == 1.0"
+          },
+          "checks_performed": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of IP checks attempted for this DNSBL"
+          },
+          "successful_checks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of successful checks (LISTED or NOT_LISTED responses)"
+          },
+          "failed_checks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of failed checks (timeouts, invalid responses)"
+          },
+          "failure_rate": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Computed as failed_checks / checks_performed"
+          },
+          "failure_types": {
+            "type": "object",
+            "description": "Count of each failure type encountered",
+            "properties": {
+              "timeout": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "DNS query timeouts"
+              },
+              "nxdomain_zone": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "DNSBL zone itself doesn't exist (NXDOMAIN for zone)"
+              },
+              "invalid_response_range": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "A record response outside 127.0.0.0/8 range"
+              },
+              "invalid_response_type": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Non-A record response (CNAME, TXT, etc.)"
+              },
+              "unknown_error": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Other DNS errors (SERVFAIL, network errors)"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "network_connectivity": {
+      "description": "Supplemental DNS connectivity check results",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["check_enabled", "cloudflare_reachable", "google_reachable"],
+          "properties": {
+            "check_enabled": {
+              "type": "boolean",
+              "const": true,
+              "description": "Supplemental checks were performed"
+            },
+            "cloudflare_reachable": {
+              "type": "boolean",
+              "description": "True if 1.1.1.1 responded to DNS query for google.com"
+            },
+            "google_reachable": {
+              "type": "boolean",
+              "description": "True if 8.8.8.8 responded to DNS query for google.com"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["check_enabled"],
+          "properties": {
+            "check_enabled": {
+              "type": "boolean",
+              "const": false,
+              "description": "Supplemental checks were disabled"
+            },
+            "cloudflare_reachable": {
+              "type": "null"
+            },
+            "google_reachable": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null",
+          "description": "Supplemental checks were disabled (legacy compatibility)"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

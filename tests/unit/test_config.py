@@ -137,3 +137,61 @@ def test_config_dry_run_parsing(monkeypatch):
 
         config = Config.from_env()
         assert config.dry_run is False, f"Expected False for DRY_RUN={dry_run_value}"
+
+
+def test_config_verbose_parsing(monkeypatch):
+    """Test that VERBOSE boolean parsing works correctly."""
+    base_env = {
+        "DB_HOST": "localhost",
+        "DB_NAME": "postal",
+        "DB_USER": "test_user",
+        "DB_PASSWORD": "test_pass",
+        "DNSBL_ZONES": "zen.spamhaus.org",
+        "JIRA_SERVER": "https://test.atlassian.net",
+        "JIRA_USER": "test@example.com",
+        "JIRA_API_TOKEN": "test_token",
+        "JIRA_PROJECT": "OPS",
+        "JIRA_ISSUE_TYPE": "Incident",
+        "JIRA_DNS_FAILURE_ISSUE_TYPE": "Alert",
+    }
+
+    # Test true values
+    for verbose_value in ["true", "True", "TRUE", "1", "yes"]:
+        for key, value in base_env.items():
+            monkeypatch.setenv(key, value)
+        monkeypatch.setenv("VERBOSE", verbose_value)
+
+        config = Config.from_env()
+        assert config.verbose is True, f"Expected True for VERBOSE={verbose_value}"
+
+    # Test false values (default)
+    for key, value in base_env.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.delenv("VERBOSE", raising=False)
+
+    config = Config.from_env()
+    assert config.verbose is False, "Expected False for VERBOSE not set (default)"
+
+
+def test_config_enable_network_connectivity_check_default(monkeypatch):
+    """Test that ENABLE_NETWORK_CONNECTIVITY_CHECK defaults to true."""
+    base_env = {
+        "DB_HOST": "localhost",
+        "DB_NAME": "postal",
+        "DB_USER": "test_user",
+        "DB_PASSWORD": "test_pass",
+        "DNSBL_ZONES": "zen.spamhaus.org",
+        "JIRA_SERVER": "https://test.atlassian.net",
+        "JIRA_USER": "test@example.com",
+        "JIRA_API_TOKEN": "test_token",
+        "JIRA_PROJECT": "OPS",
+        "JIRA_ISSUE_TYPE": "Incident",
+        "JIRA_DNS_FAILURE_ISSUE_TYPE": "Alert",
+    }
+
+    for key, value in base_env.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.delenv("ENABLE_NETWORK_CONNECTIVITY_CHECK", raising=False)
+
+    config = Config.from_env()
+    assert config.enable_network_connectivity_check is True, "Expected True by default"

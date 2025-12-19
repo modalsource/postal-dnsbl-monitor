@@ -40,6 +40,8 @@ class Config:
 
     # Operational Configuration
     dry_run: bool
+    enable_network_connectivity_check: bool
+    verbose: bool
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -123,6 +125,18 @@ class Config:
         dry_run_str = os.getenv("DRY_RUN", "false").lower()
         dry_run = dry_run_str in ("true", "1", "yes")
 
+        enable_network_connectivity_check_str = os.getenv(
+            "ENABLE_NETWORK_CONNECTIVITY_CHECK", "true"
+        ).lower()
+        enable_network_connectivity_check = enable_network_connectivity_check_str in (
+            "true",
+            "1",
+            "yes",
+        )
+
+        verbose_str = os.getenv("VERBOSE", "false").lower()
+        verbose = verbose_str in ("true", "1", "yes")
+
         return cls(
             db_host=db_host,
             db_port=db_port,
@@ -143,6 +157,8 @@ class Config:
             jira_dns_failure_issue_type=jira_dns_failure_issue_type,
             jira_excluded_statuses=jira_excluded_statuses,
             dry_run=dry_run,
+            enable_network_connectivity_check=enable_network_connectivity_check,
+            verbose=verbose,
         )
 
     @staticmethod
